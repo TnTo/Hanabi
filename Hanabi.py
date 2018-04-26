@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-class tessera: {
+class tessera:
     number = 0
     color = ""
     owner = ""
@@ -15,4 +15,3 @@ class tessera: {
         return
     def __init__ (self, num, col):
         return
-}
