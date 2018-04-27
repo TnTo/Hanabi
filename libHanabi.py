@@ -6,19 +6,30 @@ class tile:
     knownnumber = False
 
     def getnumber (self):
-        return
+        return number
     def getcolor (self):
-        return
+        return color
     def getowner (self):
-        return
-    def setowner (self):
-        return
-    def setknowncolor (self):
-        return
-    def setknownnumber (self):
-        return
+        return owner
+    def setowner (self, player):
+        owner = player.name
+        return 0
+    def setknowncolor (self, known):
+        knowncolor = known
+        return 0
+    def setknownnumber (self, known):
+        knownnumber = known
+        return 0
     def __init__ (self, num, col):
-        return
+        if num > 0 and num < 6:
+            number = num
+        else:
+            return 2
+        if col in [red, blue, yellow, green]:
+            color = col
+        else:
+            return 2
+        return 0
 
 class deck:
 
@@ -76,6 +87,8 @@ class game:
     def move (self):
         return
     def hasended (self):
+        return
+    def run (self):
         return
     def __init__ (self):
         return
