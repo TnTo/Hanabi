@@ -1,3 +1,5 @@
+from random import shuffle
+
 class tile:
     number = 0
     color = ""
@@ -6,36 +8,51 @@ class tile:
     knownnumber = False
 
     def getnumber (self):
-        return number
+        return self.number
     def getcolor (self):
-        return color
+        return self.color
     def getowner (self):
-        return owner
+        return self.owner
     def setowner (self, player):
-        owner = player.name
+        self.owner = player.name
         return 0
-    def setknowncolor (self, known):
-        knowncolor = known
+    def setknowncolor (self, knowncolor):
+        self.knowncolor = known
         return 0
-    def setknownnumber (self, known):
-        knownnumber = known
+    def setknownnumber (self, knownnumber):
+        self.knownnumber = known
+        return 0
+    def printtile (self):
+        print (str(self.number) + self.color)
         return 0
     def __init__ (self, num, col):
         if num > 0 and num < 6:
-            number = num
+            self.number = num
         else:
             return 2
-        if col in [red, blue, yellow, green]:
-            color = col
+        if col in ["red", "blue", "yellow", "green"]:
+            self.color = col
         else:
             return 2
-        return 0
+        return
 
 class deck:
+    tiles = []
 
     def draw (self, player):
         return
     def __init__ (self):
+        for num in range (1,6):
+            for col in ["red", "blue", "yellow", "green"]:
+                if num == 1: numberoftiles = 3
+                elif num in [2,3,4]: numberoftiles = 2
+                elif num == 5: numberoftiles = 1
+                for i in range (0, numberoftiles):
+                    self.tiles.append( tile(num,col) )
+        #random sorting
+        shuffle (self.tiles)
+        #for item in self.tiles:
+        #    item.printtile()
         return
 
 class board:
@@ -62,6 +79,7 @@ class board:
 
 class player:
     hand = []
+    name = ""
 
     def draw (self):
         return
@@ -71,16 +89,16 @@ class player:
         return
     def gethand (self):
         return
-    def __init__ (self):
+    def __init__ (self, name):
         return
 
 class game:
     Deck = deck()
     Board = board()
-    North = player()
-    South = player()
-    East = player()
-    West = player()
+    North = player("North")
+    South = player("South")
+    East = player("East")
+    West = player("West")
 
     players = [South,East,North,West]
 
