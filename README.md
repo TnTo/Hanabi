@@ -5,3 +5,4 @@ This project aim to find optimal strategy for Hanabi using a neural network
 *1 Generic
 *2 Parameter out of range
 *3 No more element to pick
+*4 You shuold have already lose the game
