@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 class tile:
     number = 0
     color = ""
