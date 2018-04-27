@@ -1,5 +1,7 @@
 from random import shuffle
 
+colors = ["red", "blue", "yellow", "green"]
+
 class tile:
     number = 0
     color = ""
@@ -14,7 +16,7 @@ class tile:
     def getowner (self):
         return self.owner
     def setowner (self, player):
-        self.owner = player.name
+        self.owner = player.getname()
         return 0
     def setknowncolor (self, knowncolor):
         self.knowncolor = known
@@ -30,7 +32,7 @@ class tile:
             self.number = num
         else:
             return 2
-        if col in ["red", "blue", "yellow", "green"]:
+        if col in colors:
             self.color = col
         else:
             return 2
@@ -39,11 +41,15 @@ class tile:
 class deck:
     tiles = []
 
-    def draw (self, player):
-        return
+    def howmanytile (self):
+        return len(self.tiles)
+    def draw (self):
+        if self.howmanytile() == 0
+            return 3
+        return self.tiles.pop()
     def __init__ (self):
         for num in range (1,6):
-            for col in ["red", "blue", "yellow", "green"]:
+            for col in colors:
                 if num == 1: numberoftiles = 3
                 elif num in [2,3,4]: numberoftiles = 2
                 elif num == 5: numberoftiles = 1
@@ -72,7 +78,7 @@ class board:
         return
     def addtile (self):
         return
-    def gettile (self):
+    def getstacks (self):
         return
     def __init__ (self):
         return
@@ -81,14 +87,16 @@ class player:
     hand = []
     name = ""
 
-    def draw (self):
+    def draw (self, deck):
         return
     def discard (self):
         return
     def hint (self):
         return
     def gethand (self):
-        return
+        return self.hand
+    def getname (self):
+        return self.name
     def __init__ (self, name):
         return
 
