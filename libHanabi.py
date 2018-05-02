@@ -1,6 +1,6 @@
 from random import shuffle
 
-colors = ["red", "blue", "yellow", "green"]
+colors = ["Red", "Blue", "Yellow", "Green"]
 
 class tile:
     def __init__ (self, num, col, owner):
@@ -15,8 +15,8 @@ class tile:
             self.color = ""
             return 2
         self.owner = owner
-        knowncolor = False
-        knownnumber = False
+        self.knowncolor = False
+        self.knownnumber = False
         return
 
     def getnumber (self):
@@ -39,6 +39,12 @@ class tile:
     def setknownnumber (self, known):
         self.knownnumber = known
         return 0
+
+    def getknowncolor (self):
+        return self.knowncolor
+
+    def getknownnumber (self):
+        return self.knownnumber
 
     def printtile (self):
         print (str(self.number) + self.color)
@@ -191,7 +197,7 @@ class player:
 
 
 class game:
-    def __init__ (self):
+    def __init__ (self, inputsource):
         self.Deck = deck()
         self.Board = board()
         self.North = player("North", self)
@@ -199,6 +205,8 @@ class game:
         self.West = player("West", self)
         self.East = player("East", self)
         self.players = [self.South, self.East, self.North, self.West]
+        self.roundwithzerodeck = 0
+        self.inputsource = inputsource
         return
 
     def getdeck(self):
@@ -210,9 +218,64 @@ class game:
     def getplayers (self):
         return self.players
 
-    def move (self):
-        return
+    def move (self, player, input):
+        if input[0] == 0:
+            player.discard(input[1])
+        if input[0] == 1:
+            player.playtile(input[1])
+        if input[0] == 2:
+            player.hint(input[1], input[2])
+        else:
+            return 2
+        return 0
+
     def hasended (self):
-        return
+        if (self.Board.getlife() == 0):
+            return True
+        if (self.Board.getstacks()[0] == 5 and
+            self.Board.getstacks()[1] == 5 and
+            self.Board.getstacks()[2] == 5 and
+            self.Board.getstacks()[3] == 5):
+            return True
+        #Horrible, functional only if hasended is called before every move
+        #Probably has to change the design
+        if self.Deck.howmanytile() == 0:
+            self.roundwithzerodeck = self.roundwithzerodeck + 1
+            if self.roundwithzerodeck > 4:
+                return True
+        return False
+
     def run (self):
-        return
+        #Horrible, need to rewrite hasended
+        while (True):
+            for player in self.players:
+                if not self.hasended():
+                    self.move(player, self.inputsource.getinput(self.getstatus(player)))
+        return 0
+
+    def getstatus (self, activeplayer):
+        status = {}
+        status["stack"] = self.Board.getstacks()
+        status["hint"] = self.Board.gethint()
+        status["life"] = self.Board.getlife()
+        status["deck"] = self.Deck.howmanytile()
+        status["players"] = {}
+        status["activeplayer"] = activeplayer.getname()
+        for player in self.getplayers():
+            status["players"][player.getname()] = {"hand": {}}
+            if (player == activeplayer):
+                for i in range(0,len(player.gethand())):
+                    tile = player.gethand()[i]
+                    if tile.getknowncolor():
+                        color = tile.getcolor()[0]
+                    else:
+                        color = None
+                    if tile.getknownnumber():
+                        number = tile.getnumber()
+                    else:
+                        number = None
+                    status["players"][player.getname()]["hand"][i] = [color, number]
+            else:
+                for i in range(0,len(player.gethand())):
+                    status["players"][player.getname()]["hand"][i] = [player.gethand()[i].getnumber(), player.gethand()[i].getcolor()[0]]
+        return status
