@@ -158,6 +158,7 @@ class player:
             else:
                 return 2
 
+    #Some doubts about type, possible error
     def hint (self, category, player):
         if category in colors:
             #Hint is about color
@@ -267,7 +268,7 @@ class game:
                 for i in range(0,len(player.gethand())):
                     tile = player.gethand()[i]
                     if tile.getknowncolor():
-                        color = tile.getcolor()[0]
+                        color = tile.getcolor()
                     else:
                         color = None
                     if tile.getknownnumber():
@@ -277,5 +278,5 @@ class game:
                     status["players"][player.getname()]["hand"][i] = [color, number]
             else:
                 for i in range(0,len(player.gethand())):
-                    status["players"][player.getname()]["hand"][i] = [player.gethand()[i].getnumber(), player.gethand()[i].getcolor()[0]]
+                    status["players"][player.getname()]["hand"][i] = [player.gethand()[i].getnumber(), player.gethand()[i].getcolor()
         return status
