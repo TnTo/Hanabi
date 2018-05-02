@@ -28,15 +28,15 @@ class tile:
     def getowner (self):
         return self.owner
 
-    def setowner (self, player):
-        self.owner = player.getname()
+    def setowner (self, name):
+        self.owner = name
         return 0
 
-    def setknowncolor (self, knowncolor):
+    def setknowncolor (self, known):
         self.knowncolor = known
         return 0
 
-    def setknownnumber (self, knownnumber):
+    def setknownnumber (self, known):
         self.knownnumber = known
         return 0
 
@@ -67,7 +67,7 @@ class deck:
 
     def draw (self):
         if self.howmanytile() == 0:
-            return 3
+            return 3 #Check
         return self.tiles.pop()
 
 
@@ -78,9 +78,9 @@ class board:
         self.stacks = [0,0,0,0]
         return
 
-    def loselife(self):
+    def loselife(self):     #to refactor to check whether the game is lost
         if self.life == 0:
-            return 3
+            return 3 #Check
         self.life = self.life - 1
         return 0
 
@@ -115,43 +115,104 @@ class board:
         else:
             tile.setowner("Discard")
             #I'm not sure this is valid in python
-            if (not self.loselife())
+            if (self.loselife() == 2):
                 return 4
         return 0
 
 
 class player:
-    hand = []
-    name = ""
+    def draw (self):
+        #This not check how many tile already in hand
+        drawntile = self.deck.draw()
+        if (drawntile == 3):
+            return 4 #Check
+        else:
+            self.hand.append(drawntile)
+            drawntile.setowner(self.name)
+            return 0
 
-    def draw (self, deck):
+    def __init__ (self, name, game):
+        self.name = name
+        self.hand = []
+        self.deck = game.getdeck()
+        self.board = game.getboard()
+        while (len(self.hand) < 5):
+            self.draw()
         return
-    def discard (self):
-        return
-    def hint (self):
-        return
+
+    def discard (self, index):
+        if (self.deck.howmanytile() == 0 or len(self.hand == 0)):
+            return 3 #Check
+        else:
+            if (index >= 0 and index < 5):
+                self.hand.pop(index).setowner("Discard")
+                self.draw()
+                self.board.gainhint()
+                return 0
+            else:
+                return 2
+
+    def hint (self, category, player):
+        if category in colors:
+            #Hint is about color
+            if (player != self.name and player in game.getplayers()):
+                for tile in player.gethand():
+                    if tile.getcolor == category:
+                        tile.setknowncolor(True)
+                        return 0
+            else:
+                return 2
+        elif category in range(1,6):
+            if (player != self.name and player in game.getplayers()):
+                for tile in player.gethand():
+                    if tile.getnumber == category:
+                        tile.setknownnumber(True)
+                        return 0
+            else:
+                return 2
+        else:
+            return 2
+
+    def playtile (self, index):
+        if (self.deck.howmanytile() == 0 or len(self.hand == 0)):
+            return 3 #Check
+        else:
+            if (index >= 0 and index < 5):
+                self.board.addtile(self.hand.pop(index))
+                return 0 #check
+            else:
+                return 2
+
     def gethand (self):
         return self.hand
+
     def getname (self):
         return self.name
-    def __init__ (self, name):
-        return
+
 
 class game:
-    Deck = deck()
-    Board = board()
-    North = player("North")
-    South = player("South")
-    East = player("East")
-    West = player("West")
+    def __init__ (self):
+        self.Deck = deck()
+        self.Board = board()
+        self.North = player("North", self)
+        self.South = player("South", self)
+        self.West = player("West", self)
+        self.East = player("East", self)
+        self.players = [self.South, self.East, self.North, self.West]
+        return
 
-    players = [South,East,North,West]
+    def getdeck(self):
+        return self.Deck
+
+    def getboard (self):
+        return self.Board
+
+    def getplayers (self):
+        return self.players
 
     def move (self):
         return
     def hasended (self):
         return
     def run (self):
-        return
-    def __init__ (self):
         return
