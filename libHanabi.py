@@ -1,4 +1,5 @@
 from random import shuffle
+from itertools import cycle
 
 colors = ["Red", "Blue", "Yellow", "Green"]
 
@@ -253,6 +254,21 @@ class game:
                 if not self.hasended():
                     self.move(player, self.inputsource.getinput(self.getstatus(player)))
         return 0
+
+        ##Alternative formulation (maybe) not implemented in the rest of program
+        # infplayers = cycle(players)
+        # for player in infplayers:
+        #    aftermove = self.move(player, self.inputsource.getinput(self.getstatus(player)))
+        #    if (aftermove != 0) #GameIsEnding
+        #        if (aftermove == 4): #LastRound
+        #            for i in range(0,4):
+        #                player = next(infplayers)
+        #                self.move(player, self.inputsource.getinput(self.getstatus(player)))
+        #       break
+
+
+
+
 
     def getstatus (self, activeplayer):
         status = {}
