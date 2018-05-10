@@ -10,6 +10,12 @@ This project aim to find optimal strategy for Hanabi using a neural network
 * 3 No more element to pick
 * 4 You should have already lost the game
 
+###End Game Codes
+* 0 No Problem
+* 5 Game End
+* 6 Invalid move
+* 7 Last Round
+
 ### Input
 
 The input function must return a list, in particular
