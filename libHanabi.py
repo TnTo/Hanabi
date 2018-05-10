@@ -122,10 +122,9 @@ class board:
         else:
             tile.setowner("Discard")
             self.loselife()
-            if self.getlife() == 0
+            if self.getlife() == 0:
                 return 5
         return 0
-
 
 class player:
     def draw (self):
@@ -266,7 +265,7 @@ class game:
 
     def run (self):
         #Alternative formulation (maybe) not implemented in the rest of program
-        infplayers = cycle(players)
+        infplayers = cycle(self.players)
         player = next(infplayers)
         while True:
             aftermove = self.move(player, self.inputsource.getinput(self.getstatus(player)))
