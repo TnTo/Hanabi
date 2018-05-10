@@ -121,6 +121,7 @@ class board:
                 self.gainhint()
         else:
             tile.setowner("Discard")
+            self.discarded.append(tile)
             self.loselife()
             if self.getlife() == 0:
                 return 5
@@ -142,7 +143,7 @@ class player:
         self.hand = []
         self.deck = game.getdeck()
         self.board = game.getboard()
-        while (len(self.hand) < 5):
+        while (len(self.hand) < 4):
             self.draw()
         return
 
@@ -151,7 +152,9 @@ class player:
             return 6
         else:
             if (index >= 0 and index < 5):
-                self.hand.pop(index).setowner("Discard")
+                tmptile = self.hand.pop(index)
+                tmptile.setowner("Discard")
+                self.board.discarded.append(tmptile)
                 self.draw()
                 self.board.gainhint()
                 if (self.board.howmanytile() == 0):
@@ -224,6 +227,7 @@ class game:
         self.players = [self.South, self.East, self.North, self.West]
         self.roundwithzerodeck = 0
         self.inputsource = inputsource
+        self.discarded = []
         return
 
     def getdeck(self):
@@ -289,6 +293,9 @@ class game:
         status["hint"] = self.Board.gethint()
         status["life"] = self.Board.getlife()
         status["deck"] = self.Deck.howmanytile()
+        status["discard"] = []
+        for tile in self.discarded:
+            status["discard"].append([tile.getnumber(), tile.getcolor()])
         status["players"] = {}
         status["activeplayer"] = activeplayer.getname()
         for player in self.getplayers():
@@ -304,8 +311,8 @@ class game:
                         number = tile.getnumber()
                     else:
                         number = None
-                    status["players"][player.getname()]["hand"][i] = [color, number]
+                    status["players"][player.getname()]["hand"][i] = [number, color]
             else:
                 for i in range(0,len(player.gethand())):
-                    status["players"][player.getname()]["hand"][i] = [player.gethand()[i].getnumber(), player.gethand()[i].getcolor()]
+                    status["players"][player.getname()]["hand"][i] = [player.gethand()[i].getnumber(), player.gethand()[i].getcolor(), player.gethand()[i].getknownnumber(),player.gethand()[i].getknowncolor()]
         return status
