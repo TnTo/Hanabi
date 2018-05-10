@@ -17,12 +17,12 @@ The necessary input are:
 \begin{itemize}
 	\item[1] for the number of lifes [int]
 	\item[1] for the number of hints [int]
-	\item[1] for the number of tiles left in the deck [int] 
+	\item[1] for the number of tiles left in the deck [int]
 	\item[20] for the discarded tiles:
 	\begin{itemize}
 		\item[1] for each of the 20 possible couple number-color [int]
 	\end{itemize}
-	\item[64] for 3 opponents' hands:
+	\item[48] for 3 opponents' hands:
 	\begin{itemize}
 		\item[16] for each opponent's hand:
 		\begin{itemize}
@@ -38,7 +38,7 @@ The necessary input are:
 	\end{itemize}
 	\item[4] for the tiles on the stacks [int]
 \end{itemize}
-For a total of 99 input. \\
+For a total of 83 input. \\
 Stacks and hands use progressive integer to input the different numbers and colors of tiles. If the training will show often misunderstandings of number or color I suggest to split the integer input in a greater number of boolean input.
 
 \subsection{Output}
@@ -70,15 +70,15 @@ Also propose to update weight and bias as follow:
 
 \subsection{Algebra}
 Hypothesize two hidden layer. \\
-So we have 
+So we have
 \begin{itemize}
-	\item 99 $a_\mu$ input
-	\item 110 (arbitrary) sigmoid neurons of first hidden layer 
+	\item 83 $a_\mu$ input
+	\item 90 (arbitrary) sigmoid neurons of first hidden layer
 	\begin{flalign*}
 		h_\lambda^1 = \sigma \left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) = { \left( {1 + exp \left( -{ {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1}
 	\end{flalign*}
-	
-	\item 110 (still arbitrary) sigmoid neurons of second hidden layer 
+
+	\item 90 (still arbitrary) sigmoid neurons of second hidden layer
 	\begin{flalign*}
 		h_\nu^2 &= \sigma \left( {{w^2}_\nu^\lambda} h^1_\lambda + {{b^2}_\nu}\right) = {\left( {1 + exp \left( -{ {{w^2}_\nu^\lambda} h^1_\lambda - {{b^2}_\nu}}\right) }\right) } ^ {-1} = \\
 		&= {\left( {1 + exp \left( -{ {{w^2}_\nu^\lambda} \cdot \sigma\left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) - {{b^2}_\nu}}\right) }\right) } ^ {-1} = \\
@@ -97,12 +97,12 @@ Out cost function will become
 	C &= {\left| o_{\hat{\rho}} - {{s} \over 20}\right| }^{\alpha n} = {\left| \sigma_m \left( {{w^o}^\nu_{\hat{\rho}}} \cdot \sigma \left( { {{w^2}_\nu^\lambda} \cdot \sigma \left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) + {{b^2}_\nu}}\right) + {{b^o}_{\hat{\rho}}} \right) - {{s} \over 20}\right| }^{\alpha n} = \\
 	&= {\left| {{exp\left( {{w^o}^\nu_{\hat{\rho}}} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_{\hat{\rho}}}\right) } \over {\sum_\rho {exp\left( {{w^o}^\nu_\rho} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_\rho}\right) }}} - {s \over 20}\right| }^{\alpha n}
 \end{flalign*}
-So, we need to compute 
-$\partial C \over \partial {w^1}$, 
-$\partial C \over \partial {w^2}$, 
-$\partial C \over \partial {w^o}$, 
-$\partial C \over \partial {b^1}$, 
-$\partial C \over \partial {b^2}$, 
+So, we need to compute
+$\partial C \over \partial {w^1}$,
+$\partial C \over \partial {w^2}$,
+$\partial C \over \partial {w^o}$,
+$\partial C \over \partial {b^1}$,
+$\partial C \over \partial {b^2}$,
 $\partial C \over \partial {b^o}$
 in order to determinate the variation of weights and bias. \\
 Remember that $\sigma'(x)=\sigma(x)(1-\sigma(x))dx$ and $\sigma_m'(x)=\sigma_m(x)(1-\sigma_m(x))dx$ and consider that we can extend $\partial C$ in $o = {s \over 20}$ assigning the value $0$, we can start computing $dC={\alpha n \over { {o - {s \over 20}}}} C(o) do$. \\

@@ -2,8 +2,13 @@
 
 from libHanabi import game
 from libInput import inputsource
+from libNN import NeuralNetwork
 
-Input = inputsource()
+#Input = inputsource()
+Input = NeuralNetwork()
+
 Game = game(Input)
 
-Game.run()
+points = Game.run()
+
+Input.update(points)
