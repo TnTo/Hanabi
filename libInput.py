@@ -3,6 +3,7 @@ colors = ["Red", "Blue", "Yellow", "Green"]
 class inputsource:
 
     def getinput(self, status):
+        #print(status)
         if status["last"]:
             self.printstatus(status)
         else:
@@ -21,7 +22,7 @@ class inputsource:
                 print("Invalid selection")
         if move in [0,1]:
             print("Choose the tile")
-            for h in range (0,4):
+            for h in range (0,len(status["players"][status["activeplayer"]]["hand"])):
                 num = status["players"][status["activeplayer"]]["hand"][h][0]
                 col = status["players"][status["activeplayer"]]["hand"][h][1]
                 if num == None:
@@ -35,7 +36,7 @@ class inputsource:
                 print(str(h) + " " + num + col)
             while True:
                 tile = int(input("-> "))
-                if tile in range (0,4):
+                if tile in range (0,len(status["players"][status["activeplayer"]]["hand"])):
                     ret.append(tile)
                     break
                 else:
@@ -49,6 +50,7 @@ class inputsource:
             while True:
                 player = int(input("-> "))
                 if player in range (0,3):
+                    ret.append("")
                     ret.append(players[(player + 1 + i) % 4])
                     break
                 else:
@@ -62,12 +64,13 @@ class inputsource:
                 category = int(input("-> "))
                 if category in range (1,10):
                     if category in range(1,6):
-                        ret.append(category)
+                        ret[1]=category
                     else:
-                        ret.append(colors[category-6])
+                        ret[1]=colors[category-6]
                     break
                 else:
                     print("Invalid selection")
+
         return ret
 
     def printstatus(self, status):
@@ -88,7 +91,7 @@ class inputsource:
         print ()
         hand = ""
         print("Your hand:")
-        for h in range (0,4):
+        for h in range (0,len(status["players"][status["activeplayer"]]["hand"])):
             num = status["players"][status["activeplayer"]]["hand"][h][0]
             col = status["players"][status["activeplayer"]]["hand"][h][1]
             if num == None:
@@ -108,7 +111,7 @@ class inputsource:
             print(players[pp] + "'s hand:")
             hand = ""
             khand = ""
-            for h in range(0,4):
+            for h in range (0,len(status["players"][players[pp]]["hand"])):
                 num = str(status["players"][players[pp]]["hand"][h][0])
                 col = status["players"][players[pp]]["hand"][h][1][0]
                 knum = status["players"][players[pp]]["hand"][h][2]

@@ -83,6 +83,7 @@ class board:
         self.hint = 8
         self.life = 3
         self.stacks = [0,0,0,0]
+        self.discarded = []
         return
 
     def loselife(self):     #to refactor to check whether the game is lost
@@ -110,8 +111,11 @@ class board:
     def getstacks (self):
         return self.stacks
 
+    def getdiscarded(self):
+        return self.discarded
+
     def addtile (self, tile):
-        tilecolor = color.index(tile.getcolor())
+        tilecolor = colors.index(tile.getcolor())
         tilenumber = tile.getnumber()
         stacknumber = self.stacks[tilecolor]
         if tilenumber == (stacknumber + 1):
@@ -143,6 +147,7 @@ class player:
         self.hand = []
         self.deck = game.getdeck()
         self.board = game.getboard()
+        self.game = game
         while (len(self.hand) < 4):
             self.draw()
         return
@@ -154,37 +159,43 @@ class player:
             if (index >= 0 and index < 5):
                 tmptile = self.hand.pop(index)
                 tmptile.setowner("Discard")
-                self.board.discarded.append(tmptile)
+                self.board.getdiscarded().append(tmptile)
                 self.draw()
                 self.board.gainhint()
-                if (self.board.howmanytile() == 0):
+                if (self.deck.howmanytile() == 0):
                     return 7
                 else:
                     return 0
             else:
                 return 6
 
-    def hint (self, category, player):
+    def hint (self, category, playername):
         if (self.board.gethint() == 0):
             return 6
         else:
+            playernames = []
+            player = None
+            for pl in self.game.getplayers():
+                playernames.append(pl.getname())
+                if pl.getname() == playername:
+                    player = pl
             if category in colors:
                 #Hint is about color
-                if (player != self.name and player in game.getplayers()):
+                if (playername != self.name and playername in playernames):
                     for tile in player.gethand():
-                        if tile.getcolor == category:
+                        if tile.getcolor() == category:
                             tile.setknowncolor(True)
-                            return 0
                     self.board.losehint()
+                    return 0
                 else:
                     return 6
             elif category in range(1,6):
-                if (player != self.name and player in game.getplayers()):
+                if (playername != self.name and playername in playernames):
                     for tile in player.gethand():
-                        if tile.getnumber == category:
+                        if tile.getnumber() == category:
                             tile.setknownnumber(True)
-                            return 0
                     self.board.losehint()
+                    return 0
                 else:
                     return 6
             else:
@@ -201,8 +212,8 @@ class player:
                 elif self.board.getstacks() == [5,5,5,5]:
                     return 5
                 else:
-                    self.player.draw()
-                    if (self.board.howmanytile()==0):
+                    self.draw()
+                    if (self.deck.howmanytile()==0):
                         return 7
                     else:
                         return 0
@@ -227,7 +238,6 @@ class game:
         self.players = [self.South, self.East, self.North, self.West]
         self.roundwithzerodeck = 0
         self.inputsource = inputsource
-        self.discarded = []
         self.lastsuccessfull = True
         return
 
@@ -274,6 +284,7 @@ class game:
         player = next(infplayers)
         while True:
             aftermove = self.move(player, self.inputsource.getinput(self.getstatus(player)))
+            #2print ("move ended with code: " + str(aftermove))
             if (aftermove == 0):
                 self.lastsuccessfull = True
                 player = next(infplayers)
@@ -283,7 +294,8 @@ class game:
                     pass
                 elif (aftermove == 5): #GameEnd
                     break
-                elif (aftermove == 4): #LastRound
+                elif (aftermove == 7): #LastRound
+                    print("Last Round!")
                     for i in range(0,4):
                         player = next(infplayers)
                         aftermove2 = 0
@@ -297,7 +309,8 @@ class game:
                         if aftermove2 == 5:
                             break
                     break
-        return sum(self.board.getstacks())
+        print("You have reached " + str(sum(self.Board.getstacks())) + " points")
+        return sum(self.Board.getstacks())
 
     def getstatus (self, activeplayer):
         status = {}
@@ -306,7 +319,7 @@ class game:
         status["life"] = self.Board.getlife()
         status["deck"] = self.Deck.howmanytile()
         status["discard"] = []
-        for tile in self.discarded:
+        for tile in self.Board.getdiscarded():
             status["discard"].append([tile.getnumber(), tile.getcolor()])
         status["players"] = {}
         status["activeplayer"] = activeplayer.getname()
