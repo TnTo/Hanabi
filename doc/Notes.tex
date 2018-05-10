@@ -60,7 +60,7 @@ E.g. with 116 additional input we give to the network memory of the last play of
 The first choice necessary to characterize neural network is the function that characterizes neurons. \\
 An obvious choice is the sigmoide $\sigma(z)={1 \over {1 + e^{-z}}}$ but for output neurons we should prefer a normalized function like the softmax $\sigma_m (z_j)={{e^{z_j}} \over {\sum_{i} e^{z_i}}}$. \\
 In both case we have, if $i$ is a neuron of $L-1$ layer and $j$ is our neuron in $L$ layer, $z_j=\sum_i {w_{ij}}{z_i}+{b_{ij}}$, with $w$ the "weight" of the link and $b$ the associates bias.
-An interesting choice for the error function for each iteration is $C={\left| p - {{s} \over 25}\right| }^{\alpha n}$, where $s$ is the score achieved, $n$ is the distance (in number of moves) from the end of the match, $\alpha$ a parameter and $p$ the probability of the move (i.e. the values of the output neuron chosen). \\
+An interesting choice for the error function for each iteration is $C={\left| p - {{s} \over 20}\right| }^{\alpha n}$, where $s$ is the score achieved, $n$ is the distance (in number of moves) from the end of the match, $\alpha$ a parameter and $p$ the probability of the move (i.e. the values of the output neuron chosen). \\
 This choice allows us to not take any assumption about what is a good move and, at the same time, to give a stronger feedback to the last moves (which we can suppose are more linked with the final result) and weaker to the farther ones. \\
 The idea behind the function is that we are more likely to choose a move if it grants us a better result, but (except the case in which it grants us the perfect match) we want to preserve a possibility of deviation to improve. \\
 Our \href{http://neuralnetworksanddeeplearning.com}{source} suggest the use of a mean of cost function on a sample of the training set, but I'd refuse the guess. \\
@@ -94,8 +94,8 @@ So we have
 \end{itemize}
 Out cost function will become
 \begin{flalign*}
-	C &= {\left| o_{\hat{\rho}} - {{s} \over 25}\right| }^{\alpha n} = {\left| \sigma_m \left( {{w^o}^\nu_{\hat{\rho}}} \cdot \sigma \left( { {{w^2}_\nu^\lambda} \cdot \sigma \left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) + {{b^2}_\nu}}\right) + {{b^o}_{\hat{\rho}}} \right) - {{s} \over 25}\right| }^{\alpha n} = \\
-	&= {\left| {{exp\left( {{w^o}^\nu_{\hat{\rho}}} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_{\hat{\rho}}}\right) } \over {\sum_\rho {exp\left( {{w^o}^\nu_\rho} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_\rho}\right) }}} - {s \over 25}\right| }^{\alpha n}
+	C &= {\left| o_{\hat{\rho}} - {{s} \over 20}\right| }^{\alpha n} = {\left| \sigma_m \left( {{w^o}^\nu_{\hat{\rho}}} \cdot \sigma \left( { {{w^2}_\nu^\lambda} \cdot \sigma \left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) + {{b^2}_\nu}}\right) + {{b^o}_{\hat{\rho}}} \right) - {{s} \over 20}\right| }^{\alpha n} = \\
+	&= {\left| {{exp\left( {{w^o}^\nu_{\hat{\rho}}} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_{\hat{\rho}}}\right) } \over {\sum_\rho {exp\left( {{w^o}^\nu_\rho} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_\rho}\right) }}} - {s \over 20}\right| }^{\alpha n}
 \end{flalign*}
 So, we need to compute 
 $\partial C \over \partial {w^1}$, 
@@ -105,22 +105,22 @@ $\partial C \over \partial {b^1}$,
 $\partial C \over \partial {b^2}$, 
 $\partial C \over \partial {b^o}$
 in order to determinate the variation of weights and bias. \\
-Remember that $\sigma'(x)=\sigma(x)(1-\sigma(x))dx$ and $\sigma_m'(x)=\sigma_m(x)(1-\sigma_m(x))dx$ and consider that we can extend $\partial C$ in $o = {s \over 25}$ assigning the value $0$, we can start computing $dC={\alpha n \over { {o - {s \over 25}}}} C(o) do$. \\
+Remember that $\sigma'(x)=\sigma(x)(1-\sigma(x))dx$ and $\sigma_m'(x)=\sigma_m(x)(1-\sigma_m(x))dx$ and consider that we can extend $\partial C$ in $o = {s \over 20}$ assigning the value $0$, we can start computing $dC={\alpha n \over { {o - {s \over 20}}}} C(o) do$. \\
 Furthermore we can labeling $z^o = {{w^o}^\nu_{\hat{\rho}}} {h_\nu^2} + \sum_\nu {{b^o}^\nu_{\hat{\rho}}}$, $z_2= {{{w^2}_\nu^\lambda} h^1_\lambda + \sum_\lambda {{b^2}_\nu^\lambda}}$ and $z_1 = {{{w^1}_\nu^\lambda} a_\lambda + \sum_\lambda {{b^1}_\nu^\lambda}}$, such that $o_{\hat{\rho}}= \sigma_m(z^o)$, $h^2=\sigma(z^2)$ and $h^1=\sigma(z^1)$. \\
 So follow that:
 \begin{flalign*}
-	{\partial C} \over {\partial {b^o}} &= {\alpha n \over { {o - {s \over 25}}}} C(o) {\partial \sigma_m (z^o) \over \partial {b^o}} = {\alpha n \over { {o - {s \over 25}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o))\\
-	\partial C \over \partial {w^o}^\mu &= {\alpha n \over { {o - {s \over 25}}}} C(o) {\partial \sigma_m (z^o) \over \partial {w^o}^\mu} = {\alpha n \over { {o - {s \over 25}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)){h^2}_\mu = {{\partial C} \over {\partial {b^o}}}  {h^2}_\mu \\
-	\partial C \over \partial {b^2} &= {\alpha n \over { {o - {s \over 25}}}} C(o) { \partial \sigma_m (z^o) \over \partial {b^2}} = \\
-	&= {\alpha n \over { {o - {s \over 25}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) = \\
+	{\partial C} \over {\partial {b^o}} &= {\alpha n \over { {o - {s \over 20}}}} C(o) {\partial \sigma_m (z^o) \over \partial {b^o}} = {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o))\\
+	\partial C \over \partial {w^o}^\mu &= {\alpha n \over { {o - {s \over 20}}}} C(o) {\partial \sigma_m (z^o) \over \partial {w^o}^\mu} = {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)){h^2}_\mu = {{\partial C} \over {\partial {b^o}}}  {h^2}_\mu \\
+	\partial C \over \partial {b^2} &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {b^2}} = \\
+	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) = \\
 	&= {{\partial C} \over {\partial {b^o}}}  ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) \\
-	{\partial C} \over {\partial {w^2}^\nu} &= {\alpha n \over { {o - {s \over 25}}}} C(o) { \partial \sigma_m (z^o) \over \partial {w^2}^\nu} = \\
-	&= {\alpha n \over { {o - {s \over 25}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)){h^1}_\nu = {{\partial C} \over {\partial {b^2}}} {h^1}_\nu  \\
-	\partial C \over \partial {b^1} &= {\alpha n \over { {o - {s \over 25}}}} C(o) { \partial \sigma_m (z^o) \over \partial {b^1}} = \\
-	&= {\alpha n \over { {o - {s \over 25}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu)) = \\
+	{\partial C} \over {\partial {w^2}^\nu} &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {w^2}^\nu} = \\
+	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)){h^1}_\nu = {{\partial C} \over {\partial {b^2}}} {h^1}_\nu  \\
+	\partial C \over \partial {b^1} &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {b^1}} = \\
+	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu)) = \\
 	&= {{\partial C} \over {\partial {b^2}}}  ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu)) \\
-	\partial C \over \partial {w^1}^\tau &= {\alpha n \over { {o - {s \over 25}}}} C(o) { \partial \sigma_m (z^o) \over \partial {w^1}^\tau} = \\
-	&= {\alpha n \over { {o - {s \over 25}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu))a_\tau = \\
+	\partial C \over \partial {w^1}^\tau &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {w^1}^\tau} = \\
+	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu))a_\tau = \\
 	&= {{\partial C} \over {\partial {b^1}}} a_\tau
 \end{flalign*}
 
