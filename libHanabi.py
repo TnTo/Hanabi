@@ -148,7 +148,7 @@ class player:
         return
 
     def discard (self, index):
-        if (len(self.hand == 0) or self.board.gethint()>=8):
+        if (len(self.hand) == 0 or self.board.gethint()>=8):
             return 6
         else:
             if (index >= 0 and index < 5):
@@ -191,7 +191,7 @@ class player:
                 return 6
 
     def playtile (self, index):
-        if (len(self.hand == 0)):
+        if (len(self.hand) == 0):
             return 6
         else:
             if (index >= 0 and index < 5):
@@ -228,6 +228,7 @@ class game:
         self.roundwithzerodeck = 0
         self.inputsource = inputsource
         self.discarded = []
+        self.lastsuccessfull = True
         return
 
     def getdeck(self):
@@ -274,16 +275,27 @@ class game:
         while True:
             aftermove = self.move(player, self.inputsource.getinput(self.getstatus(player)))
             if (aftermove == 0):
+                self.lastsuccessfull = True
                 player = next(infplayers)
             else: #GameIsEnding
                 if (aftermove == 6): #Invalid play
+                    self.lastsuccessfull = False
                     pass
                 elif (aftermove == 5): #GameEnd
                     break
                 elif (aftermove == 4): #LastRound
                     for i in range(0,4):
                         player = next(infplayers)
-                        self.move(player, self.inputsource.getinput(self.getstatus(player)))
+                        aftermove2 = 0
+                        while True:
+                            aftermove2 = self.move(player, self.inputsource.getinput(self.getstatus(player)))
+                            if (aftermove2 == 6): #Invalid play
+                                self.lastsuccessfull = False
+                                pass
+                            else:
+                                break
+                        if aftermove2 == 5:
+                            break
                     break
         return sum(self.board.getstacks())
 
@@ -315,4 +327,5 @@ class game:
             else:
                 for i in range(0,len(player.gethand())):
                     status["players"][player.getname()]["hand"][i] = [player.gethand()[i].getnumber(), player.gethand()[i].getcolor(), player.gethand()[i].getknownnumber(),player.gethand()[i].getknowncolor()]
+        status["last"]=self.lastsuccessfull
         return status
