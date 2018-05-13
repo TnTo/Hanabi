@@ -4,11 +4,31 @@ from libHanabi import game
 from libInput import inputsource
 from libNN import NeuralNetwork
 
+import matplotlib.pyplot as plt
+from numpy import polyfit
+
 #Input = inputsource()
 Input = NeuralNetwork()
 
-Game = game(Input)
+pointsmemory = []
 
-points = Game.run()
+NIter = 10000
 
-Input.update(points)
+for i in range (0, NIter):
+    print("Match number " + str(i + 1) + " of " + str(NIter))
+
+    Input.resetmovesmemory()
+
+    Game = game(Input)
+
+    points = Game.run()
+
+    pointsmemory.append(points)
+
+    Input.update(points)
+
+plt.scatter(range(0, NIter), pointsmemory)
+fit = polyfit (range(0, NIter), pointsmemory, deg=1)
+plt.plot(range(0, NIter), fit[0] * range(0, NIter) + fit[1], color='red')
+
+plt.show()

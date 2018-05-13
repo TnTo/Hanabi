@@ -1,6 +1,7 @@
 from numpy import array, matrix, zeros, empty, exp, array_equal, outer, dot, transpose
 from numpy.random import randn
 from random import uniform as randu
+import json
 
 #Hyperparameters
 NInput = 83
@@ -9,31 +10,44 @@ NOutput = 35
 NHiddenLayers = 2
 NeuronsHiddenLayer = 90
 
-alpha = 1.0
-eta = 0.05
+alpha = 0.5
+eta = 0.75
+nu = 0.05
 
 #Global Variables
 colors = ["Red", "Blue", "Yellow", "Green"]
+filename = 'NN.json'
 
 class NeuralNetwork:
     def __init__ (self):
-        #matrix of weight from input to first layer
         self.w = [] #list of weight matrix
         self.b = [] #list of bias vector
-        #Need i/o from file to store improvements
-        for i in range (0, (NHiddenLayers + 1)):
-            rows = NeuronsHiddenLayer
-            columns = NeuronsHiddenLayer
-            if i == 0:
-                rows = NInput
-            if i == NHiddenLayers:
-                columns = NOutput
-            self.w.append(zeros((rows, columns))) #Random Gaussian(0,1)
-            self.b.append(zeros(columns)) #Zeros
+        try:
+            file = open(filename, 'r')
+            wb = json.loads(file)
+            for i in wb[0]:
+                self.w.append(array(wb[0][i]))
+            for j in wb[1]:
+                self.b.append(array(wb[1][j]))
+            file.close()
+        except:
+            for i in range (0, (NHiddenLayers + 1)):
+                rows = NeuronsHiddenLayer
+                columns = NeuronsHiddenLayer
+                if i == 0:
+                    rows = NInput
+                if i == NHiddenLayers:
+                    columns = NOutput
+                self.w.append(zeros((rows, columns)) + 0.01) #Uniform 0.01
+                self.b.append(zeros(columns) + 0.01) #Uniform 0.01
         self.moves = []
         self.lastmove = []
         self.players = []
         self.activeplayer = ""
+
+    def resetmovesmemory(self):
+        self.moves = []
+        return 0
 
     def parsestatus (self, status):
         input = empty(NInput)
@@ -135,7 +149,10 @@ class NeuralNetwork:
 
     def softmax (self, x):
         y = exp (x)
-        return y/sum(y)
+        try:
+            return y/sum(y)
+        except:
+            return 0
 
     def goforward(self, input):
         input = input #Maybe unnecessary
@@ -154,20 +171,20 @@ class NeuralNetwork:
         input = self.parsestatus(status)
         outputprob = self.goforward(input)
         r = randu(0.0,1.0)
-        print (str(r))
+        #print (str(r))
         output = 0
         while ((sum(outputprob[:(output + 1)])) < r):
             output = output + 1
         self.lastmove = [input, output, outputprob]
-        print (str(output))
+        #print (str(output))
         return self.parseoutput(output)
 
     def cost (self, x, n, points):
-        return (abs(x - (points / 20.0)))**(alpha*n)
+        return (abs(x - (points / 20.0)))**(n**alpha)
 
     def dcost (self, x, n, points):
         if x != (points/20.0):
-            return alpha * n * self.cost (x, n, points) / (x - (points / 20.0))
+            return (n**alpha) * self.cost (x, n, points) / (x - (points / 20.0))
         else:
             return 0
 
@@ -175,24 +192,26 @@ class NeuralNetwork:
         if not (array_equal(self.lastmove, self.moves[-1])):
             self.moves.append(self.lastmove)
 
+        print ("Match ended after " + str(len(self.moves)) + " moves")
+
         #I aim to generate a great number of corrections (n) and sum up all
         #while still using old weights and bias for computing
         #I don't know if it's methodologically correct
 
-        wupd = [] #list of updated weight matrix
-        bupd = [] #list of updated bias vector
-        for i in range (0, (NHiddenLayers + 1)):
+        # wupd = [] #list of updated weight matrix
+        # bupd = [] #list of updated bias vector
+        #for i in range (0, (NHiddenLayers + 1)):
             # rows = NeuronsHiddenLayer
             # columns = NeuronsHiddenLayer
             # if i == 0:
             #     rows = NInput
             # if i == NHiddenLayers:
             #     columns = NOutput
-            wupd = self.w
-            bupd = self.b
+        wupd = self.w
+        bupd = self.b
 
         for n in range(1, len(self.moves) + 1):
-            print(n)
+            #print(n)
 
             input, output, outputprobvect = self.moves[-n]
             outputprob = outputprobvect[output]
@@ -221,14 +240,28 @@ class NeuralNetwork:
                 root = dC
                 for l in range (1, NHiddenLayers + 2):
                     if l == 1:
-                        bupd[-l] = root * h[-l] * (1 - h[-l])
+                        dCdb = root * h[-l] * (1 - h[-l])
                     else:
-                        bupd[-l] = dot(root, (transpose(self.w[-l + 1]) * (h[-l] * (1 - h[-l]))))
+                        dCdb = dot(root, (transpose(self.w[-l + 1]) * (h[-l] * (1 - h[-l]))))
                     if l == NHiddenLayers + 1:
-                        wupd[-l] = outer(input, bupd[-l])
+                        dCdw = outer(input, dCdb)
                     else:
-                        wupd[-l] = outer(h[-(l + 1)], bupd[-l])
-                    root = bupd[-l]
+                        dCdw = outer(h[-(l + 1)], dCdb)
+                    bupd[-l] = bupd[-l] - (eta * (dCdb))
+                    wupd[-l] = ((1 - nu) * wupd[-l]) - (eta * (dCdw))
+                    root = dCdb
 
-                self.w = wupd
-                self.b = bupd
+        self.w = wupd
+        self.b = bupd
+
+        file = open(filename, 'w')
+        wb = [[],[]]
+        for ww in self.w:
+            wtemp=matrix(ww)
+            wb[0].append(wtemp.tolist())
+        for bb in self.b:
+            wb[1].append(bb.tolist())
+        file.write(json.dumps(wb))
+        file.close()
+
+        #print("Update!")
