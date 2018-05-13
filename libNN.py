@@ -10,8 +10,8 @@ NOutput = 35
 NHiddenLayers = 2
 NeuronsHiddenLayer = 90
 
-alpha = 0.5
-eta = 0.75
+alpha = 0.15
+eta = 0.9
 nu = 0.05
 
 #Global Variables
@@ -38,7 +38,7 @@ class NeuralNetwork:
                     rows = NInput
                 if i == NHiddenLayers:
                     columns = NOutput
-                self.w.append(zeros((rows, columns)) + 0.01) #Uniform 0.01
+                self.w.append(zeros((rows, columns)) + 1) #Uniform 0.01
                 self.b.append(zeros(columns) + 0.01) #Uniform 0.01
         self.moves = []
         self.lastmove = []
@@ -265,3 +265,6 @@ class NeuralNetwork:
         file.close()
 
         #print("Update!")
+
+    def getnumberofmoves(self):
+        return len(self.moves)
