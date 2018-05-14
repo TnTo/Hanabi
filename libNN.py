@@ -168,8 +168,14 @@ class NeuralNetwork:
         if status["last"] and self.lastmove != []:
             self.moves.append(self.lastmove)
             self.lastmove = []
-        input = self.parsestatus(status)
-        outputprob = self.goforward(input)
+        if not status["last"] and self.lastmove != []:
+            input, output, outputprob = self.lastmove
+            outputprob[output] = 0
+            outputprob = outputprob/sum(outputprob)
+        else:
+            input = self.parsestatus(status)
+            outputprob = self.goforward(input)
+
         r = randu(0.0,1.0)
         #print (str(r))
         output = 0

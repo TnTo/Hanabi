@@ -13,7 +13,7 @@ Input = NeuralNetwork()
 pointsmemory = []
 movesmemory = []
 
-NIter = 2000
+NIter = 1000
 
 for i in range (0, NIter):
     print("Match number " + str(i + 1) + " of " + str(NIter))
