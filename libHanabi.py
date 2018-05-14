@@ -142,7 +142,7 @@ class player:
             drawntile.setowner(self.name)
             return 0
 
-    def __init__ (self, name, game):
+    def __init__ (self, name, input, game):
         self.name = name
         self.hand = []
         self.deck = game.getdeck()
@@ -150,6 +150,7 @@ class player:
         self.game = game
         while (len(self.hand) < 4):
             self.draw()
+        self.inputsource = input
         return
 
     def discard (self, index):
@@ -231,13 +232,12 @@ class game:
     def __init__ (self, inputsource):
         self.Deck = deck()
         self.Board = board()
-        self.North = player("North", self)
-        self.South = player("South", self)
-        self.West = player("West", self)
-        self.East = player("East", self)
+        self.North = player("North", inputsource[0], self)
+        self.South = player("South", inputsource[0], self)
+        self.West = player("West", inputsource[0], self)
+        self.East = player("East", inputsource[0], self)
         self.players = [self.South, self.East, self.North, self.West]
         self.roundwithzerodeck = 0
-        self.inputsource = inputsource
         self.lastsuccessfull = True
         return
 
@@ -283,7 +283,7 @@ class game:
         infplayers = cycle(self.players)
         player = next(infplayers)
         while True:
-            aftermove = self.move(player, self.inputsource.getinput(self.getstatus(player)))
+            aftermove = self.move(player, player.inputsource.getinput(self.getstatus(player)))
             #2print ("move ended with code: " + str(aftermove))
             if (aftermove == 0):
                 self.lastsuccessfull = True
@@ -300,7 +300,7 @@ class game:
                         player = next(infplayers)
                         aftermove2 = 0
                         while True:
-                            aftermove2 = self.move(player, self.inputsource.getinput(self.getstatus(player)))
+                            aftermove2 = self.move(player, player.inputsource.getinput(self.getstatus(player)))
                             if (aftermove2 == 6): #Invalid play
                                 self.lastsuccessfull = False
                                 pass

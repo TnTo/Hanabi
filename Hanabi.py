@@ -10,17 +10,19 @@ from numpy import polyfit
 #Input = inputsource()
 Input = NeuralNetwork()
 
+InputList = [Input, Input, Input, Input]
+
 pointsmemory = []
 movesmemory = []
 
-NIter = 1000
+NIter = 2
 
 for i in range (0, NIter):
     print("Match number " + str(i + 1) + " of " + str(NIter))
 
-    Input.resetmovesmemory()
+    #Input.resetmovesmemory()
 
-    Game = game(Input)
+    Game = game(InputList)
 
     points = Game.run()
 
