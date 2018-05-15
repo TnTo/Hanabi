@@ -8,7 +8,7 @@ NInput = 83
 NOutput = 35
 
 NHiddenLayers = 2
-NeuronsHiddenLayer = 90
+NeuronsHiddenLayer = 45
 
 alpha = 0.15
 eta = 0.9
@@ -38,7 +38,7 @@ class NeuralNetwork:
                     rows = NInput
                 if i == NHiddenLayers:
                     columns = NOutput
-                self.w.append(zeros((rows, columns)) + 1) #Uniform 0.01
+                self.w.append(randn(rows, columns)) #Uniform 0.01
                 self.b.append(zeros(columns) + 0.01) #Uniform 0.01
         self.moves = []
         self.lastmove = []

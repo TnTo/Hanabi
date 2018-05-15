@@ -15,12 +15,12 @@ InputList = [Input, Input, Input, Input]
 pointsmemory = []
 movesmemory = []
 
-NIter = 2
+NIter = 5000
 
 for i in range (0, NIter):
     print("Match number " + str(i + 1) + " of " + str(NIter))
 
-    #Input.resetmovesmemory()
+    Input.resetmovesmemory()
 
     Game = game(InputList)
 
