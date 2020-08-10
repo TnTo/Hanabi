@@ -1,127 +1,30 @@
 \documentclass[]{article}
 \usepackage{hyperref}
 \usepackage{amsmath}
+\usepackage{biblatex}
 
-%opening
+\bibliography{Hanabi.bib}
+
 \title{Resolve Hanabi with Neural Network}
-\author{Chiappini David e Ciruzzi Michele}
+\author{Ciruzzi Michele}
 
 \begin{document}
 
 \maketitle
 
-\section{Notes}
+\section{Introduction}
+Hanabi is a cooperative game for 2 to 5 players with incomplete and asymmetric information.
+For this features it has been proposed by DeepMind group \parencite{BARD2020103216} as a new challenge for Reinforcement learning.
+The problem has been tackled both with deterministic (e.g \cite{Cox2015}) and ML-learning based algorithm (e.g. \cite{Lerer2019}).
+The game has been demostrated to be NP-Hard in general \parencite{Baffier2016}.
+As a rule of thumb a good algorithm is able to achieve a perfect score (25 points) in more than the 90\% of games.
 
-\subsection{Input}
-The necessary input are:
-\begin{itemize}
-	\item[1] for the number of lifes [int]
-	\item[1] for the number of hints [int]
-	\item[1] for the number of tiles left in the deck [int]
-	\item[20] for the discarded tiles:
-	\begin{itemize}
-		\item[1] for each of the 20 possible couple number-color [int]
-	\end{itemize}
-	\item[48] for 3 opponents' hands:
-	\begin{itemize}
-		\item[16] for each opponent's hand:
-		\begin{itemize}
-			\item[1] for the color of each of the 4 tiles in the hand [int]
-			\item[1] for the number of each of the 4 tiles in the hand [int]
-			\item[2] for each of the 4 tiles in the hand to register if owner know color and/or number [bool]
-		\end{itemize}
-	\end{itemize}
-	\item[8] for the player's hand:
-	\begin{itemize}
-		\item[1] for the color of each of the 4 tiles in the hand (0 if unknown) [int]
-		\item[1] for the number of each of the 4 tiles in the hand (0 if unknown) [int]
-	\end{itemize}
-	\item[4] for the tiles on the stacks [int]
-\end{itemize}
-For a total of 83 input. \\
-Stacks and hands use progressive integer to input the different numbers and colors of tiles. If the training will show often misunderstandings of number or color I suggest to split the integer input in a greater number of boolean input.
+\section{Methods}
+\subsection{General ideas}
+Even if more sofisticated algorithms are avaible, I have implemented the Deep-Q-Learning algorithm introduced by \textcite{Mnih2015}.
 
-\subsection{Output}
-The necessary output are:
-\begin{itemize}
-	\item[4] to discard each of tiles in the hand [probability]
-	\item[4] to play each of tiles in the hand [probability]
-	\item[27] to give a hint to an opponent:
-	\begin{itemize}
-		\item[5] numbers for each of the 3 opponents [probability]
-		\item[4] colors for each of the 3 opponents [probability]
-	\end{itemize}
-\end{itemize}
-For a total of 35 output. \\
-Eventually each of this output could be a boolean input for the next player to keep memory of recent plays. \\
-E.g. with 116 additional input we give to the network memory of the last play of each player (we manage draw and discard as single action instead of four for this purpose).
-
-\subsection{Other Choices for Neural Network}
-The first choice necessary to characterize neural network is the function that characterizes neurons. \\
-An obvious choice is the sigmoide $\sigma(z)={1 \over {1 + e^{-z}}}$ but for output neurons we should prefer a normalized function like the softmax $\sigma_m (z_j)={{e^{z_j}} \over {\sum_{i} e^{z_i}}}$. \\
-In both case we have, if $i$ is a neuron of $L-1$ layer and $j$ is our neuron in $L$ layer, $z_j=\sum_i {w_{ij}}{z_i}+{b_{ij}}$, with $w$ the "weight" of the link and $b$ the associates bias.
-An interesting choice for the error function for each iteration is $C={\left| p - {{s} \over 20}\right| }^{\alpha n}$, where $s$ is the score achieved, $n$ is the distance (in number of moves) from the end of the match, $\alpha$ a parameter and $p$ the probability of the move (i.e. the values of the output neuron chosen). \\
-This choice allows us to not take any assumption about what is a good move and, at the same time, to give a stronger feedback to the last moves (which we can suppose are more linked with the final result) and weaker to the farther ones. \\
-The idea behind the function is that we are more likely to choose a move if it grants us a better result, but (except the case in which it grants us the perfect match) we want to preserve a possibility of deviation to improve. \\
-Our \href{http://neuralnetworksanddeeplearning.com}{source} suggest the use of a mean of cost function on a sample of the training set, but I'd refuse the guess. \\
-Also propose to update weight and bias as follow:
-\[ w'_j = w_j - \eta {{\partial C} \over {\partial w_j}} \]
-\[b'_j = b_j - \eta {{\partial C} \over {\partial b_j}}\]
-
-\subsection{Algebra}
-Hypothesize two hidden layer. \\
-So we have
-\begin{itemize}
-	\item 83 $a_\mu$ input
-	\item 90 (arbitrary) sigmoid neurons of first hidden layer
-	\begin{flalign*}
-		h_\lambda^1 = \sigma \left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) = { \left( {1 + exp \left( -{ {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1}
-	\end{flalign*}
-
-	\item 90 (still arbitrary) sigmoid neurons of second hidden layer
-	\begin{flalign*}
-		h_\nu^2 &= \sigma \left( {{w^2}_\nu^\lambda} h^1_\lambda + {{b^2}_\nu}\right) = {\left( {1 + exp \left( -{ {{w^2}_\nu^\lambda} h^1_\lambda - {{b^2}_\nu}}\right) }\right) } ^ {-1} = \\
-		&= {\left( {1 + exp \left( -{ {{w^2}_\nu^\lambda} \cdot \sigma\left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) - {{b^2}_\nu}}\right) }\right) } ^ {-1} = \\
-		&= {\left( {1 + exp \left(-{ {{w^2}_\nu^\lambda} {\left( {1 + exp \left( -{ {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1}
-	\end{flalign*}
-
-	\item 35 output softmax neurons
-	\begin{flalign*}
-		o_{\hat{\rho}} &= \sigma_m \left( {{w^o}^\nu_{\hat{\rho}}} {h_\nu^2} + {{b^o}_{\hat{\rho}}} \right) = {{exp({{w^o}^\nu_{\hat{\rho}}} {h_\nu^2} + {{b^o}_{\hat{\rho}}})} \over {\sum_\rho {exp({{w^o}^\nu_\rho} {h_\nu^2} + {{b^o}_\rho})}}} = \\
-		&= {{exp({{w^o}^\nu_{\hat{\rho}}} \cdot \sigma \left( { {{w^2}_\nu^\lambda} h^1_\lambda + {{b^2}_\nu}}\right) + {{b^o}_{\hat{\rho}}})} \over {\sum_\rho {exp({{w^o}^\nu_\rho} \cdot \sigma\left( { {{w^2}_\nu^\lambda} h^1_\lambda + {{b^2}_\nu}}\right) + {{b^o}_\rho})}}} = \\
-		&= {{exp\left({{w^o}^\nu_{\hat{\rho}}} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}^\lambda}} \right) }\right) }^{-1} + {{b^o}_{\hat{\rho}}}\right)} \over {\sum_\rho {exp\left( {{w^o}^\nu_\rho} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}^\lambda}} \right) }\right) }^{-1} + {{b^o}_\rho}\right) }}}
-	\end{flalign*}
-\end{itemize}
-Out cost function will become
-\begin{flalign*}
-	C &= {\left| o_{\hat{\rho}} - {{s} \over 20}\right| }^{\alpha n} = {\left| \sigma_m \left( {{w^o}^\nu_{\hat{\rho}}} \cdot \sigma \left( { {{w^2}_\nu^\lambda} \cdot \sigma \left( { {{w^1}_\lambda^\mu} a_\mu + {{b^1}_\lambda}}\right) + {{b^2}_\nu}}\right) + {{b^o}_{\hat{\rho}}} \right) - {{s} \over 20}\right| }^{\alpha n} = \\
-	&= {\left| {{exp\left( {{w^o}^\nu_{\hat{\rho}}} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_{\hat{\rho}}}\right) } \over {\sum_\rho {exp\left( {{w^o}^\nu_\rho} {\left( {1 + exp \left( { - {{w^2}_\nu^\lambda} {\left( {1 + exp \left( { - {{w^1}_\lambda^\mu} a_\mu - {{b^1}_\lambda}}\right) }\right) }^{-1} - {{b^2}_\nu}} \right) }\right) }^{-1} + {{b^o}_\rho}\right) }}} - {s \over 20}\right| }^{\alpha n}
-\end{flalign*}
-So, we need to compute
-$\partial C \over \partial {w^1}$,
-$\partial C \over \partial {w^2}$,
-$\partial C \over \partial {w^o}$,
-$\partial C \over \partial {b^1}$,
-$\partial C \over \partial {b^2}$,
-$\partial C \over \partial {b^o}$
-in order to determinate the variation of weights and bias. \\
-Remember that $\sigma'(x)=\sigma(x)(1-\sigma(x))dx$ and $\sigma_m'(x)=\sigma_m(x)(1-\sigma_m(x))dx$ and consider that we can extend $\partial C$ in $o = {s \over 20}$ assigning the value $0$, we can start computing $dC={\alpha n \over { {o - {s \over 20}}}} C(o) do$. \\
-Furthermore we can labeling $z^o = {{w^o}^\nu_{\hat{\rho}}} {h_\nu^2} + \sum_\nu {{b^o}^\nu_{\hat{\rho}}}$, $z_2= {{{w^2}_\nu^\lambda} h^1_\lambda + \sum_\lambda {{b^2}_\nu^\lambda}}$ and $z_1 = {{{w^1}_\nu^\lambda} a_\lambda + \sum_\lambda {{b^1}_\nu^\lambda}}$, such that $o_{\hat{\rho}}= \sigma_m(z^o)$, $h^2=\sigma(z^2)$ and $h^1=\sigma(z^1)$. \\
-So follow that:
-\begin{flalign*}
-	{\partial C} \over {\partial {b^o}} &= {\alpha n \over { {o - {s \over 20}}}} C(o) {\partial \sigma_m (z^o) \over \partial {b^o}} = {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o))\\
-	\partial C \over \partial {w^o}^\mu &= {\alpha n \over { {o - {s \over 20}}}} C(o) {\partial \sigma_m (z^o) \over \partial {w^o}^\mu} = {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)){h^2}_\mu = {{\partial C} \over {\partial {b^o}}}  {h^2}_\mu \\
-	\partial C \over \partial {b^2} &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {b^2}} = \\
-	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) = \\
-	&= {{\partial C} \over {\partial {b^o}}}  ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) \\
-	{\partial C} \over {\partial {w^2}^\nu} &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {w^2}^\nu} = \\
-	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)){h^1}_\nu = {{\partial C} \over {\partial {b^2}}} {h^1}_\nu  \\
-	\partial C \over \partial {b^1} &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {b^1}} = \\
-	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu)) = \\
-	&= {{\partial C} \over {\partial {b^2}}}  ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu)) \\
-	\partial C \over \partial {w^1}^\tau &= {\alpha n \over { {o - {s \over 20}}}} C(o) { \partial \sigma_m (z^o) \over \partial {w^1}^\tau} = \\
-	&= {\alpha n \over { {o - {s \over 20}}}} C(o) \sigma_m(z^o) (1-\sigma_m(z^o)) ({w^o}^\mu \sigma({z^2}_\mu) (1-\sigma({z^2}_\mu)) ({w^2}^\nu \sigma({z^1}_\nu) (1-\sigma({z^1}_\nu))a_\tau = \\
-	&= {{\partial C} \over {\partial {b^1}}} a_\tau
-\end{flalign*}
+\printbibliography{}
 
 \end{document}
+
+

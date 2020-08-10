@@ -1,8 +1,7 @@
 /__pycache__/*
 
 /doc/*
-!/doc/Notes.pdf
-!/doc/Notes.tex
+!/doc/*.pdf
+!/doc/*.tex
+!/doc/*.bib
 
-/prova.py
-/NN.json

@@ -1,0 +1,66 @@
+% Encoding: UTF-8
+@article{BARD2020103216,
+title = "The Hanabi challenge: A new frontier for AI research",
+journal = "Artificial Intelligence",
+volume = "280",
+pages = "103216",
+year = "2020",
+issn = "0004-3702",
+doi = "https://doi.org/10.1016/j.artint.2019.103216",
+url = "http://www.sciencedirect.com/science/article/pii/S0004370219300116",
+author = "Nolan Bard and Jakob N. Foerster and Sarath Chandar and Neil Burch and Marc Lanctot and H. Francis Song and Emilio Parisotto and Vincent Dumoulin and Subhodeep Moitra and Edward Hughes and Iain Dunning and Shibl Mourad and Hugo Larochelle and Marc G. Bellemare and Michael Bowling",
+keywords = "Multi-agent learning, Challenge paper, Reinforcement learning, Games, Theory of mind, Communication, Imperfect information, Cooperative",
+abstract = "From the early days of computing, games have been important testbeds for studying how well machines can do sophisticated decision making. In recent years, machine learning has made dramatic advances with artificial agents reaching superhuman performance in challenge domains like Go, Atari, and some variants of poker. As with their predecessors of chess, checkers, and backgammon, these game domains have driven research by providing sophisticated yet well-defined challenges for artificial intelligence practitioners. We continue this tradition by proposing the game of Hanabi as a new challenge domain with novel problems that arise from its combination of purely cooperative gameplay with two to five players and imperfect information. In particular, we argue that Hanabi elevates reasoning about the beliefs and intentions of other agents to the foreground. We believe developing novel techniques for such theory of mind reasoning will not only be crucial for success in Hanabi, but also in broader collaborative efforts, especially those with human partners. To facilitate future research, we introduce the open-source Hanabi Learning Environment, propose an experimental framework for the research community to evaluate algorithmic advances, and assess the performance of current state-of-the-art techniques."
+}
+@Article{Lerer2019,
+  author       = {Adam Lerer and Hengyuan Hu and Jakob Foerster and Noam Brown},
+  title        = {Improving Policies via Search in Cooperative Partially Observable Games},
+  abstract     = {Recent superhuman results in games have largely been achieved in a variety of zero-sum settings, such as Go and Poker, in which agents need to compete against others. However, just like humans, real-world AI systems have to coordinate and communicate with other agents in cooperative partially observable environments as well. These settings commonly require participants to both interpret the actions of others and to act in a way that is informative when being interpreted. Those abilities are typically summarized as theory f mind and are seen as crucial for social interactions. In this paper we propose two different search techniques that can be applied to improve an arbitrary agreed-upon policy in a cooperative partially observable game. The first one, single-agent search, effectively converts the problem into a single agent setting by making all but one of the agents play according to the agreed-upon policy. In contrast, in multi-agent search all agents carry out the same common-knowledge search procedure whenever doing so is computationally feasible, and fall back to playing according to the agreed-upon policy otherwise. We prove that these search procedures are theoretically guaranteed to at least maintain the original performance of the agreed-upon policy (up to a bounded approximation error). In the benchmark challenge problem of Hanabi, our search technique greatly improves the performance of every agent we tested and when applied to a policy trained using RL achieves a new state-of-the-art score of 24.61 / 25 in the game, compared to a previous-best of 24.08 / 25.},
+  date         = {2019-12-05},
+  eprint       = {1912.02318v1},
+  eprintclass  = {cs.AI},
+  eprinttype   = {arXiv},
+  file         = {:http\://arxiv.org/pdf/1912.02318v1:PDF},
+  journaltitle = {AAAI 2020},
+  keywords     = {cs.AI, cs.MA},
+}
+
+@Article{Baffier2016,
+  author      = {Jean-Francois Baffier and Man-Kwun Chiu and Yago Diez and Matias Korman and Valia Mitsou and André van Renssen and Marcel Roeloffzen and Yushi Uno},
+  title       = {Hanabi is NP-hard, Even for Cheaters who Look at Their Cards},
+  abstract    = {In this paper we study a cooperative card game called Hanabi from the viewpoint of algorithmic combinatorial game theory. In Hanabi, each card has one among $c$ colors and a number between $1$ and $n$. The aim is to make, for each color, a pile of cards of that color with all increasing numbers from $1$ to $n$. At each time during the game, each player holds $h$ cards in hand. Cards are drawn sequentially from a deck and the players should decide whether to play, discard or store them for future use. One of the features of the game is that the players can see their partners' cards but not their own and information must be shared through hints. We introduce a single-player, perfect-information model and show that the game is intractable even for this simplified version where we forego both the hidden information and the multiplayer aspect of the game, even when the player can only hold two cards in her hand. On the positive side, we show that the decision version of the problem---to decide whether or not numbers from $1$ through $n$ can be played for every color---can be solved in (almost) linear time for some restricted cases.},
+  date        = {2016-03-07},
+  eprint      = {1603.01911v3},
+  eprintclass = {cs.DM},
+  eprinttype  = {arXiv},
+  file        = {:http\://arxiv.org/pdf/1603.01911v3:PDF},
+  keywords    = {cs.DM, cs.CC},
+}
+
+@Article{Cox2015,
+  author    = {Christopher Cox and Jessica De Silva and Philip Deorsey and Franklin H. J. Kenter and Troy Retter and Josh Tobin},
+  journal   = {Mathematics Magazine},
+  title     = {How to Make the Perfect Fireworks Display: Two Strategies {forHanabi}},
+  year      = {2015},
+  month     = {dec},
+  number    = {5},
+  pages     = {323--336},
+  volume    = {88},
+  doi       = {10.4169/math.mag.88.5.323},
+  publisher = {Informa {UK} Limited},
+}
+
+@Article{Mnih2015,
+  author    = {Volodymyr Mnih and Koray Kavukcuoglu and David Silver and Andrei A. Rusu and Joel Veness and Marc G. Bellemare and Alex Graves and Martin Riedmiller and Andreas K. Fidjeland and Georg Ostrovski and Stig Petersen and Charles Beattie and Amir Sadik and Ioannis Antonoglou and Helen King and Dharshan Kumaran and Daan Wierstra and Shane Legg and Demis Hassabis},
+  journal   = {Nature},
+  title     = {Human-level control through deep reinforcement learning},
+  year      = {2015},
+  month     = {feb},
+  number    = {7540},
+  pages     = {529--533},
+  volume    = {518},
+  doi       = {10.1038/nature14236},
+  publisher = {Springer Science and Business Media {LLC}},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}
