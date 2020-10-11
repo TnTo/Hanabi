@@ -2,13 +2,13 @@ from random import shuffle, choice
 from enum import Enum, IntEnum
 from typing import List, Union, Type, Dict
 from abc import ABC
-from copy import deepcopy
+from dataclasses import dataclass
 
 N_PLAYERS: int = 5
 
 
 class InputSource(ABC):
-    def move(self, game: 'Game', activePlayer: 'Player', **kwargs) -> 'Action':
+    def move(self, game: "Game", activePlayer: "Player", **kwargs) -> "Action":
         return Action()
 
 
@@ -18,7 +18,7 @@ def handSize(n_players: int) -> int:
     elif n_players in [4, 5]:
         return 4
     else:
-        raise NameError('InvalidNPlayers')
+        raise NameError("InvalidNPlayers")
 
 
 class Color(Enum):
@@ -37,13 +37,68 @@ class Number(IntEnum):
     FIVE = 5
 
 
+class Info(Enum):
+    YES = 1
+    UNKNOWN = 0
+    NO = -1
+
+
 Feature = Union[Color, Number]
+
+
+@dataclass(frozen=True)
+class TileData:
+    color: Color
+    number: Number
+    isBlue: Info
+    isGreen: Info
+    isRed: Info
+    isWhite: Info
+    isYellow: Info
+    isOne: Info
+    isTwo: Info
+    isThree: Info
+    isFour: Info
+    isFive: Info
 
 
 class Tile:
     def __init__(self, number: Number, color: Color):
-        self.color = color
-        self.number = number
+        self.color: Color = color
+        self.number: Number = number
+        self.infos: Dict[Feature, Info] = {}
+        for color in Color:
+            self.infos[color] = Info.UNKNOWN
+        for number in Number:
+            self.infos[number] = Info.UNKNOWN
+
+    def receive_hint(self, hint: Hint):
+        if isinstance(hint.feature, Number):
+            if self.number == hint.feature:
+                for number in Number:
+                    self.infos[number] = Info.NO
+                self.infos[hint.feature] = Info.YES
+        if isinstance(hint.feature, Color):
+            if self.color == hint.feature:
+                for color in Color:
+                    self.infos[color] = Info.NO
+                self.infos[hint.feature] = Info.YES
+
+    def save(self):
+        return TileData(
+            color=self.color,
+            number=self.number,
+            isBlue=self.infos[Color.BLUE],
+            isGreen=self.infos[Color.GREEN],
+            isRed=self.infos[Color.RED],
+            isWhite=self.infos[Color.WHITE],
+            isYellow=self.infos[Color.YELLOW],
+            isOne=self.infos[Number.ONE],
+            isTwo=self.infos[Number.TWO],
+            isThree=self.infos[Number.THREE],
+            isFour=self.infos[Number.FOUR],
+            isFive=self.infos[Number.FIVE],
+        )
 
 
 class Deck:
@@ -69,26 +124,15 @@ class Deck:
         return len(self.deck)
 
 
-class DummyDeck(Deck):
-    def __init__(self):
-        self.deck: List[Tile] = []
-
-
-class Info(Enum):
-    YES = 1
-    UNKNOWN = 0
-    NO = -1
-
-
-class TileInHand (Tile):
-    def __init__(self, tile: Tile):
-        self.tile = tile
-        self.numberInfo: Dict[Number, Info] = {}
-        for number in Number:
-            self.numberInfo[number] = Info.UNKNOWN
-        self.colorInfo: Dict[Color, Info] = {}
-        for color in Color:
-            self.colorInfo[color] = Info.UNKNOWN
+@dataclass(frozen=True)
+class ActionData:
+    turn: int
+    hintColor: Union[Color, None] = None
+    hintNumber: Union[Number, None] = None
+    player: int = 0
+    played: Union[TileData, None] = None
+    discarded: Union[TileData, None] = None
+    drawn: Union[TileData, None] = None
 
 
 class Action(ABC):
@@ -106,69 +150,66 @@ class Play(Action):
 
 
 class Hint(Action):
-    def __init__(self, player: 'Player', feature: Feature):
+    def __init__(self, player: "Player", feature: Feature):
         self.player = player
-        self.feature: Union[Color, Number] = feature
+        self.feature: Feature = feature
+
+
+@dataclass(frozen=True)
+class PlayerData:
+    hand: List[TileData]
 
 
 class Player:
     def __init__(self, deck: Deck, inputSource: InputSource):
         self.inputSource = inputSource
-        self.hand: List[TileInHand] = []
+        self.hand: List[Tile] = []
+        self.deck = deck
         for _ in range(handSize(N_PLAYERS)):
-            self.draw(deck)
+            self.draw()
 
-    def draw(self, deck: Deck):
+    def draw(self):
         if deck.numberOfTiles() > 0:
-            self.hand.append(TileInHand(deck.draw()))
+            drawnTile = self.deck.draw()
+            self.hand.append(drawnTile)
+            return drawnTile
 
     def getHint(self, hint: Hint):
-        if isinstance(hint.feature, Color):
-            for tile in self.hand:
-                if tile.tile.color == hint.feature:
-                    tile.colorInfo[hint.feature] = Info.YES
-                else:
-                    tile.colorInfo[hint.feature] = Info.NO
-        elif isinstance(hint.feature, Number):
-            for tile in self.hand:
-                if tile.tile.number == hint.feature:
-                    tile.numberInfo[hint.feature] = Info.YES
-                else:
-                    tile.numberInfo[hint.feature] = Info.NO
+        for tile in self.hand:
+            tile.receive_hint(hint)
 
-    def discardTile(self, discard: Union[Discard, Play], deck: Deck):
-        for i in range(len(self.hand)):
-            if self.hand[i].tile is discard.tile:
-                self.hand.pop(i)
-                self.draw(deck)
-                return
+    def discardTile(self, discard: Union[Discard, Play]):
+        self.hand.remove(discard.tile)
+        return self.draw()
 
-    def copy(self):
-        player = Player(DummyDeck(), self.inputSource)
-        player.hand = deepcopy(self.hand)
-        return player
+    def save(self):
+        return PlayerData(hand=[tile.save() for tile in self.hand])
+
+
+@dataclass(frozen=True)
+class GameData:
+    lifes: int
+    hints: int
+    piles: Dict[Color, Union[Number, None]]
+    discarded: Dict[Color, Dict[Number, int]]
+    players: List[PlayerData]
+    turn: int
 
 
 class Game:
-    def __init__(self, inputSources: Union[InputSource, List[InputSource]]):
+    def __init__(
+        self, inputSources: InputSource
+    ):  # from Union[InputSource, List[InputSource]] to InputSource
         self.lifes = 3
         self.hints = 8
         self.deck = Deck()
         self.discardedTiles: List[Tile] = []
         self.players: List[Player] = []
         self.piles: Dict[Color, Union[Number, None]] = {color: None for color in Color}
-        self.lastRound = False
+        self.lastRound: Union[int, None] = None
         self.ended = False
-        if isinstance(inputSources, InputSource):
-            self.players = [Player(self.deck, inputSources) for _ in range(N_PLAYERS)]
-        elif (isinstance(inputSources, List) and (len(inputSources) == 1)):
-            self.players = [Player(self.deck, inputSources[0]) for _ in range(N_PLAYERS)]
-        elif len(inputSources) == N_PLAYERS:
-            self.players = [Player(self.deck, inputSource) for inputSource in inputSources]
-        elif len(inputSources) == 0:
-            pass
-        else:
-            self.players = [Player(self.deck, choice(inputSources)) for _ in range(N_PLAYERS)]
+        self.players = [Player(self.deck, inputSources) for _ in range(N_PLAYERS)]
+        self.turn = 1
 
     def availableActions(self) -> List[Type[Action]]:
         if self.hints == 0:
@@ -179,22 +220,31 @@ class Game:
             return [Hint, Discard, Play]
 
     def move(self, player: Player, action: Action):
+        if not type(action) in self.availableActions():
+            raise NameError("InvalidMove")
         if isinstance(action, Hint):
-            if self.hints == 0:
-                raise NameError('InvalidMove')
-            else:
-                self.hints -= 1
-                action.player.getHint(action)
-        elif isinstance(action, Discard):
-            if self.hints == 8:
-                raise NameError('InvalidMove')
-            else:
-                self.hints += 1
-                player.discardTile(action, self.deck)
-                self.discardedTiles.append(action.tile)
-        elif isinstance(action, Play):
-            player.discardTile(action, self.deck)
-            if action.tile.number == 1:
+            if action.player == self.players[0]:
+                raise NameError("InvalidMove")
+            self.hints -= 1
+            action.player.getHint(action)
+            return ActionData(
+                turn=self.turn,
+                hintColor=action.feature if isinstance(action.feature, Color) else None,
+                hintNumber=action.feature
+                if isinstance(action.feature, Number)
+                else None,
+                player=self.players.index(action.player),
+            )
+        if isinstance(action, Discard):
+            self.hints += 1
+            drawnTile = player.discardTile(action)
+            self.discardedTiles.append(action.tile)
+            return ActionData(
+                turn=self.turn, discarded=action.tile.save(), drawn=drawnTile.save()
+            )
+        if isinstance(action, Play):
+            drawnTile = player.discardTile(action)
+            if action.tile.number == Number.ONE:
                 if self.piles[action.tile.color] is None:
                     self.piles[action.tile.color] = action.tile.number
                 else:
@@ -206,17 +256,25 @@ class Game:
                 else:
                     self.lifes -= 1
                     self.discardedTiles.append(action.tile)
-                if action.tile.number == Number.FIVE:
-                    end = True
-                    for color in Color:
-                        if self.piles[color] != Number.FIVE:
-                            end = False
-                    if end:
-                        self.ended = True
-            if self.lifes == 0:
-                self.ended = True
-            if self.deck.numberOfTiles() == 0:
-                self.lastRound = True
+            return ActionData(
+                turn=self.turn, played=action.tile.save(), drawn=drawnTile.save()
+            )
+
+    def next_turn(self):
+        self.turn += 1
+        players.append(players[0])
+        players.pop(0)
+        if set([self.piles[color] for color in Color]) == set([Number.FIVE]):
+            self.ended = True
+        if self.lifes == 0:
+            self.ended = True
+        if self.deck.numberOfTiles() == 0:
+            if self.lastRound is None:
+                self.lastRound = N_PLAYERS
+            else:
+                self.lastRound -= 1
+        if self.lastRound == 0:
+            self.ended = True
 
     def score(self) -> int:
         score: int = 0
@@ -224,14 +282,18 @@ class Game:
             score += int(self.piles[color] or 0)
         return score
 
-    def copy(self):
-        game = Game([])
-        game.players = self.players.copy()
-        game.lifes = deepcopy(self.lifes)
-        game.hints = deepcopy(self.hints)
-        game.deck = deepcopy(self.deck)
-        game.discardedTiles = deepcopy(self.discardedTiles)
-        game.piles = deepcopy(self.piles)
-        game.lastRound = deepcopy(self.lastRound)
-        game.ended = deepcopy(self.ended)
-        return game
+    def count_discarded(self):
+        count = {color: {number: 0} for number in Number for color in Color}
+        for tile in self.discardedTiles:
+            count[tile.color][tile.number] += 1
+        return count
+
+    def save(self):
+        return GameData(
+            lifes=self.lifes,
+            hints=self.hints,
+            piles={color: self.piles[color] for color in Color},
+            discarded=self.count_discarded(),
+            players=[player.save() for player in self.players],
+            turn=self.turn,
+        )
