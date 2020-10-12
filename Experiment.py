@@ -1,145 +1,199 @@
-from Hanabi import Game, Action, Hint, Discard, Play, Player, Color, Number, InputSource, N_PLAYERS
+from Hanabi import (
+    Game,
+    Action,
+    Hint,
+    Discard,
+    Play,
+    Number,
+    Color,
+    InputSource,
+    GameData,
+    ActionData,
+    N_PLAYERS,
+)
 from keras import Model
-from typing import NamedTuple, List, Union, Tuple, Callable, Dict, Any
+from typing import List
+from random import random, choice
+from dataclasses import dataclass
+from pprint import pprint
 import numpy as np
-from random import random, choice, choices
-from operator import itemgetter
-from itertools import cycle
-
-N_NETWORKS: int = 1
-N_PARALLEL_GAMES: int = 1
-MIRROR_PLAY: bool = True
-LEARN_FROM_PREVIOUS_EPISODES: bool = False
-LEARN_FROM_OTHERS_GAMES: bool = False
-LEARN_FROM_OTHERS_PLAYERS: bool = False
-N_EPOCHS: int = 25
-SHUFFLE_INPUT: bool = False
+from os import mkdir
+import pickle
+import matplotlib.pyplot as plt
+from statistics import mean
 
 
-class Memory(NamedTuple):
-    episode: int
-    gameId: int
-    gameStatus: Game
-    player: Player
-    turn: int
-    action: Action
-    score: int
-    Q: float
+@dataclass(frozen=True)
+class Memory:
+    pre: GameData
+    action: ActionData
+    post: GameData
 
 
 class NeuralNetwork(InputSource):
-    def __init__(self, model: Model,
-                 epsilon: Callable[[int], float], gamma: float,
-                 encode: Callable[[Game, Action, Player], Dict[str, np.array]]):
+    def __init__(self, model: Model):
         self.model = model
-        self.encode = encode
-        self.epsilon = epsilon
-        self.gamma = gamma
-        self.model.compile(optimizer="rmsprop", metrics='mse')
+        self.epsilon = 0.0
+        self.gamma = 0.0
+        self.model.compile(loss="mse", optimizer="rmsprop")
 
-    def move(self, game: Game, activePlayer: Player, episode: int = 0, **kwargs) -> Action:
-        actions = self.evaluateMoves(game, activePlayer)
-        if self.epsilon(episode) < random():
-            return choice(actions)[0]
-        else:
-            return max(actions, key=itemgetter(1))[0]
-
-    def evaluateMoves(self, game: Game, activePlayer: Player) -> List[Tuple[Action, float]]:
-        availableActions = game.availableActions()
-        actions: List[Tuple[Action, float]] = []
-        if Hint in availableActions:
-            for player in game.players:
-                if player is not activePlayer:
-                    for color in Color:
-                        actions.append((Hint(player, color), self.model.predict(self.encode(game, Hint(player, color), activePlayer))[0][0]))
-                    for number in Number:
-                        actions.append((Hint(player, number), self.model.predict(self.encode(game, Hint(player, number), activePlayer))[0][0]))
-        if Discard in availableActions:
-            for tile in activePlayer.hand:
-                actions.append((Discard(tile.tile), self.model.predict(self.encode(game, Discard(tile.tile), activePlayer))[0][0]))
-        if Play in availableActions:
-            for tile in activePlayer.hand:
-                actions.append((Play(tile.tile), self.model.predict(self.encode(game, Play(tile.tile), activePlayer))[0][0]))
+    def availableActions(self, game: Game) -> List[Action]:
+        actions: List[Action] = []
+        if Play in game.availableActions():
+            actions += [Play(tile) for tile in game.players[0].hand]
+        if Discard in game.availableActions():
+            actions += [Discard(tile) for tile in game.players[0].hand]
+        if Hint in game.availableActions():
+            actions += [
+                Hint(player, feature)
+                for player in game.players[1:]
+                for feature in Number
+            ]
+            actions += [
+                Hint(player, feature)
+                for player in game.players[1:]
+                for feature in Color
+            ]
         return actions
 
-    def train(self, memories: List[Memory]):
-        x = []
-        y = []
-        if isinstance(self.encode, Callable[Any, Dict[str, Any]]):
-            pass
+    def availableActionsData(self, game: GameData) -> List[ActionData]:
+        actions: List[ActionData] = []
+        if Play in game.availableActions():
+            actions += [ActionData(played=tile) for tile in game.players[0].hand]
+        if Discard in game.availableActions():
+            actions += [ActionData(discarded=tile) for tile in game.players[0].hand]
+        if Hint in game.availableActions():
+            actions += [
+                ActionData(player=player, hintNumber=feature)
+                for player in range(1, N_PLAYERS)
+                for feature in Number
+            ]
+            actions += [
+                ActionData(player=player, hintColor=feature)
+                for player in range(1, N_PLAYERS)
+                for feature in Color
+            ]
+        return actions
+
+    def evaluateAction(self, game: GameData, action: ActionData) -> float:
+        return self.model.predict(
+            np.concatenate((game.toarray(), action.toarray())).reshape(1, -1)
+        )
+
+    def move(self, game: Game) -> Action:
+        actions = self.availableActions(game)
+        if len(actions) == 0:
+            raise NameError("No Actions Available")
+        if self.epsilon < random():
+            return choice(actions)
+        else:
+            max_value = -10e30
+            gamedata = game.save()
+            for action in actions:
+                if (value := self.evaluateAction(gamedata, action.save())) > max_value:
+                    max_action = action
+                    max_value = value
+            return max_action
+
+    def Q(self, game: GameData) -> float:
+        return game.score() + self.gamma * max(
+            [
+                self.evaluateAction(game, action)
+                for action in self.availableActionsData(game)
+            ]
+        )
+
+    def train(self, memories: List[Memory], n_epochs, shuffle_input):
+        # convert to numpy
+        x = np.empty((0, self.model.input_shape[1]))
+        y = np.empty((0, 1))
         for memory in memories:
-            x.append(self.encode(memory.gameStatus, memory.action, memory.player))
-            y.append(memory.Q)
-        self.model.fit(x=x, y=y, epochs=N_EPOCHS, shuffle=SHUFFLE_INPUT)
+            x = np.vstack(
+                (x, np.concatenate((memory.pre.toarray(), memory.action.toarray())))
+            )
+            y = np.vstack((y, np.array(self.Q(memory.post))))
+        return self.model.fit(x=x, y=y, epochs=n_epochs, shuffle=shuffle_input)
 
 
 class Experiment:
-    def __init__(self, inputSources: Union[NeuralNetwork, List[NeuralNetwork]]):
-        self.memory: List[Memory] = []
-        self.inputSources = inputSources
-        self.episode: int = 0
+    def __init__(
+        self,
+        nn: NeuralNetwork,
+        n_games: int = 10,
+        keep_memory: bool = False,
+        n_episodes: int = 10,
+        n_epochs: int = 25,
+        shuffle_input: bool = True,
+        name: str = "hanabi",
+    ):
+        self.nn = nn
+        self.memories: List[Memory] = []
+        self.keep_memory = keep_memory
+        self.games: List[Game]
+        self.n_games = n_games
+        self.episode = 0
+        self.n_episodes = n_episodes
+        self.n_epochs = n_epochs
+        self.shuffle_input = shuffle_input
+        self.points: List[List[int]] = []
+        self.loss: List = []
+        self.name = name
 
-    def nextMove(self, game: Game, players: cycle, gameId: int, turn: int):
-        initialState: Game = game.copy()
-        activePlayer: Player = next(players)
-        action = activePlayer.inputSource.move(game, activePlayer, episode=self.episode)
-        game.move(activePlayer, action)
-        memory: Memory = Memory(
-            self.episode,
-            gameId,
-            initialState,
-            activePlayer,
-            turn,
-            action,
-            game.score(),
-            game.score() + activePlayer.inputSource.gamma * max(activePlayer.inputSource.evaluateMoves(game, activePlayer), key=itemgetter(1))[1]
-        )
-        self.memory.append(memory)
+    def update_nn(self):
+        if self.episode >= self.n_episodes / 2:
+            self.nn.epsilon = 0.95
+        elif self.episode >= self.n_episodes / 4:
+            self.nn.epsilon = 0.5
+        if self.episode > 1:
+            self.nn.gamma = 0.95
 
-    def playGame(self, gameId: int, inputSources: Union[NeuralNetwork, List[NeuralNetwork]]) -> int:
-        game = Game(inputSources)
-        print('Game started')
-        players = cycle(game.players)
-        turn: int = 0
-        while not game.ended:
-            turn += 1
-            print('Turn ', turn)
-            self.nextMove(game, players, gameId, turn)
-            if game.lastRound:
-                for _ in range(N_PLAYERS):
-                    turn += 1
-                    print('Turn ', turn)
-                    self.nextMove(game, players, gameId, turn)
-                break
-        return game.score()
+    def create_episode(self):
+        self.episode += 1
+        if not self.keep_memory:
+            self.memories.clear()
+        self.update_nn()
+        self.games = [Game(self.nn) for _ in range(self.n_games)]
 
-    def play(self):
-        for gameId in range(N_PARALLEL_GAMES):
-            if isinstance(self.inputSources, NeuralNetwork):
-                score = self.playGame(gameId, self.inputSources)
-            elif MIRROR_PLAY:
-                score = self.playGame(gameId, choice(self.inputSources))
-            else:
-                score = self.playGame(gameId, choices(self.inputSources, N_PLAYERS))
-        print("GAME ", gameId, "ended with ", score, " points")
+    def play_episode(self):
+        for game in self.games:
+            while not game.ended:
+                pre = game.save()
+                game.move(game.players[0], action := self.nn.move(game))
+                self.memories.append(Memory(pre, action.save(), game.save()))
+                game.next_turn()
+        self.points.append([game.score() for game in self.games])
+        print("Points:")
+        pprint(self.points[-1])
 
     def train(self):
-        if isinstance(self.inputSources, NeuralNetwork):
-            self.inputSources.train(self.memory)
-        else:
-            for NN in self.inputSources:
-                memory = self.memory
-                if not LEARN_FROM_OTHERS_GAMES:
-                    memory = [m for m in memory if NN in m.gameStatus.players]
-                    if not LEARN_FROM_OTHERS_PLAYERS:
-                        memory = [m for m in memory if NN == m.player]
-                NN.train(memory)
+        self.loss.append(
+            self.nn.train(self.memories, self.n_epochs, self.shuffle_input).history[
+                "loss"
+            ]
+        )
 
-    def run(self, episodes: int):
-        for episode in range(episodes):
-            self.episode = episode
-            print("EPISODE: ", episode)
-            if not LEARN_FROM_PREVIOUS_EPISODES:
-                self.memory.clear()
-            self.play()
+    def run(self):
+        for i in range(self.n_episodes):
+            print(f"EPISODE {i}")
+            self.create_episode()
+            self.play_episode()
             self.train()
+        print(f"EPISODE {self.n_episodes}")
+        self.create_episode()
+        self.play_episode()
+
+    def save(self):
+        mkdir(self.name)
+        pickle.dump(self.memories, open(self.name + "/memories.pickle", "wb"))
+        np.savetxt(self.name + "/points.csv", np.array(self.points))
+        np.savetxt(self.name + "/loss.csv", np.array(self.loss))
+
+        plt.plot([mean(episode) for episode in self.points])
+        plt.title("Points " + self.name)
+        plt.savefig(self.name + "/points.pdf")
+        
+        plt.close()
+
+        plt.plot([episode[-1] for episode in self.loss])
+        plt.title("Loss " + self.name)
+        plt.savefig(self.name + "/loss.pdf")
