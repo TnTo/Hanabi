@@ -87,21 +87,18 @@ class NeuralNetwork(InputSource):
         if self.epsilon < random():
             return choice(actions)
         else:
-            max_value = -10e30
-            gamedata = game.save()
-            for action in actions:
-                if (value := self.evaluateAction(gamedata, action.save())) > max_value:
-                    max_action = action
-                    max_value = value
-            return max_action
+            gamedata = game.save().toarray()
+            Xs = np.array(list(map(lambda x: np.concatenate((gamedata, x.save().toarray())), actions)))
+            Qs = self.model.predict(Xs)
+            return actions[np.argmax(Qs)]
 
     def Q(self, game: GameData) -> float:
-        return game.score() + self.gamma * max(
-            [
-                self.evaluateAction(game, action)
-                for action in self.availableActionsData(game)
-            ]
-        )
+        #rewrite
+        actions = self.availableActionsData(game)
+        gamedata = game.toarray()
+        Xs = np.array(list(map(lambda x: np.concatenate((gamedata, x.toarray())), actions)))
+
+        return game.score() + self.gamma * np.max(self.model.predict(Xs))
 
     def train(self, memories: List[Memory], n_epochs, shuffle_input):
         # convert to numpy
