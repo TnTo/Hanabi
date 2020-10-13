@@ -179,7 +179,7 @@ class Experiment:
             self.train()
             if self.episode % 5 == 0:
                 self.save_status()
-        print(f"EPISODE {self.episodes}")
+        print(f"EPISODE {self.episode}")
         self.create_episode()
         self.play_episode()
         self.save_status()
