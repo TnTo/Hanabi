@@ -17,7 +17,7 @@ from random import random, choice
 from dataclasses import dataclass
 from pprint import pprint
 import numpy as np
-from os import mkdir
+from os import mkdir, path
 import pickle
 import matplotlib.pyplot as plt
 from statistics import mean
@@ -108,7 +108,8 @@ class NeuralNetwork(InputSource):
             x = np.vstack(
                 (x, np.concatenate((memory.pre.toarray(), memory.action.toarray())))
             )
-            y = np.vstack((y, np.array(self.Q(memory.post))))
+            y = np.vstack((y, memory.post))
+        y = np.vectorize(self.Q)(y)
         return self.model.fit(x=x, y=y, epochs=n_epochs, shuffle=shuffle_input)
 
 
@@ -180,17 +181,20 @@ class Experiment:
         self.play_episode()
 
     def save(self):
-        mkdir(self.name)
-        pickle.dump(self.memories, open(self.name + "/memories.pickle", "wb"))
-        np.savetxt(self.name + "/points.csv", np.array(self.points))
-        np.savetxt(self.name + "/loss.csv", np.array(self.loss))
+        try:
+            mkdir(self.name)
+        except FileExistsError:
+            pass
+        pickle.dump(self.memories, open(path.join(self.name, "memories.pickle"), "wb"))
+        np.savetxt(path.join(self.name, "points.csv"), np.array(self.points))
+        np.savetxt(path.join(self.name, "loss.csv"), np.array(self.loss))
 
         plt.plot([mean(episode) for episode in self.points])
         plt.title("Points " + self.name)
-        plt.savefig(self.name + "/points.pdf")
+        plt.savefig(path.join(self.name, "points.pdf"))
         
         plt.close()
 
         plt.plot([episode[-1] for episode in self.loss])
         plt.title("Loss " + self.name)
-        plt.savefig(self.name + "/loss.pdf")
+        plt.savefig(path.join(self.name, "loss.pdf"))
