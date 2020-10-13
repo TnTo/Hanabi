@@ -156,7 +156,8 @@ class Experiment:
         for game in self.games:
             while not game.ended:
                 pre = game.save()
-                game.move(game.players[0], action := self.nn.move(game))
+                action = self.nn.move(game)
+                game.move(game.players[0], action)
                 self.memories.append(Memory(pre, action.save(), game.save()))
                 game.next_turn()
         self.points.append([game.score() for game in self.games])
