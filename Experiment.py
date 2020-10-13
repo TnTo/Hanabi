@@ -172,14 +172,17 @@ class Experiment:
         )
 
     def run(self):
-        for i in range(self.n_episodes):
+        while self.episode < self.n_episodes:
             print(f"EPISODE {i}")
             self.create_episode()
             self.play_episode()
             self.train()
+            if self.episode % 5 == 0:
+                self.save_status()
         print(f"EPISODE {self.n_episodes}")
         self.create_episode()
         self.play_episode()
+        self.save_status()
 
     def save(self):
         try:
@@ -199,3 +202,6 @@ class Experiment:
         plt.plot([episode[-1] for episode in self.loss])
         plt.title("Loss " + self.name)
         plt.savefig(path.join(self.name, "loss.pdf"))
+    
+    def save_status(self):
+        pickle.dump(self, open(self.name + '.pickle', 'wb'))

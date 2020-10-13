@@ -2,6 +2,8 @@
 
 from Experiment import NeuralNetwork, Experiment
 import tensorflow.keras as keras
+import os.path as path
+import pickle
 
 import cProfile
 import pstats
@@ -17,8 +19,12 @@ Q = keras.layers.Dense(1)(hidden2)
 model = keras.Model(inputs=inputs, outputs=Q)
 model.summary()
 
+name = 'exp1'
 
-ex = Experiment(NeuralNetwork(model), name='exp1', n_games=20, n_episodes=50, n_epochs=25, keep_memory=True)
+if path.exists(name+'.pickle'):
+    ex = pickle.load(open(name+'.pickle', 'rb'))
+else:
+    ex = Experiment(NeuralNetwork(model), name=name, n_games=20, n_episodes=50, n_epochs=25, keep_memory=True)
 
 ex.run()
 ex.save()
