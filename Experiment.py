@@ -173,13 +173,13 @@ class Experiment:
 
     def run(self):
         while self.episode < self.n_episodes:
-            print(f"EPISODE {i}")
+            print(f"EPISODE {self.episode}")
             self.create_episode()
             self.play_episode()
             self.train()
             if self.episode % 5 == 0:
                 self.save_status()
-        print(f"EPISODE {self.n_episodes}")
+        print(f"EPISODE {self.episodes}")
         self.create_episode()
         self.play_episode()
         self.save_status()
