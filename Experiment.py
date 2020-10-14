@@ -11,14 +11,13 @@ from Hanabi import (
     ActionData,
     N_PLAYERS,
 )
-from keras import Model
+from tensorflow.keras import Model, models
 from typing import List
 from random import random, choice
 from dataclasses import dataclass
-from pprint import pprint
 import numpy as np
 from os import mkdir, path
-import pickle
+import dill
 import matplotlib.pyplot as plt
 from statistics import mean
 
@@ -88,20 +87,27 @@ class NeuralNetwork(InputSource):
             return choice(actions)
         else:
             gamedata = game.save().toarray()
-            Xs = np.array(list(map(lambda x: np.concatenate((gamedata, x.save().toarray())), actions)))
+            Xs = np.array(
+                list(
+                    map(
+                        lambda x: np.concatenate((gamedata, x.save().toarray())),
+                        actions,
+                    )
+                )
+            )
             Qs = self.model.predict(Xs)
             return actions[np.argmax(Qs)]
 
     def Q(self, game: GameData) -> float:
-        #rewrite
         actions = self.availableActionsData(game)
         gamedata = game.toarray()
-        Xs = np.array(list(map(lambda x: np.concatenate((gamedata, x.toarray())), actions)))
+        Xs = np.array(
+            list(map(lambda x: np.concatenate((gamedata, x.toarray())), actions))
+        )
 
         return game.score() + self.gamma * np.max(self.model.predict(Xs))
 
     def train(self, memories: List[Memory], n_epochs, shuffle_input):
-        # convert to numpy
         x = np.empty((0, self.model.input_shape[1]))
         y = np.empty((0, 1))
         for memory in memories:
@@ -162,7 +168,7 @@ class Experiment:
                 game.next_turn()
         self.points.append([game.score() for game in self.games])
         print("Points:")
-        pprint(self.points[-1])
+        print(self.points[-1])
 
     def train(self):
         self.loss.append(
@@ -189,19 +195,58 @@ class Experiment:
             mkdir(self.name)
         except FileExistsError:
             pass
-        pickle.dump(self.memories, open(path.join(self.name, "memories.pickle"), "wb"))
+        dill.dump(self.memories, open(path.join(self.name, "memories.dill"), "wb"))
         np.savetxt(path.join(self.name, "points.csv"), np.array(self.points))
         np.savetxt(path.join(self.name, "loss.csv"), np.array(self.loss))
 
         plt.plot([mean(episode) for episode in self.points])
         plt.title("Points " + self.name)
         plt.savefig(path.join(self.name, "points.pdf"))
-        
+
         plt.close()
 
         plt.plot([episode[-1] for episode in self.loss])
         plt.title("Loss " + self.name)
         plt.savefig(path.join(self.name, "loss.pdf"))
-    
+
     def save_status(self):
-        pickle.dump(self, open(self.name + '.pickle', 'wb'))
+        self.nn.model.save(self.name + "_nn")
+        dill.dump(
+            {
+                "memories": self.memories,
+                "keep_memory": self.keep_memory,
+                "n_games": self.n_games,
+                "episode": self.episode,
+                "n_episodes": self.n_episodes,
+                "n_epochs": self.n_epochs,
+                "shuffle_input": self.shuffle_input,
+                "points": self.points,
+                "loss": self.loss,
+                "name": self.name,
+                "epsilon": self.nn.epsilon,
+                "gamma": self.nn.gamma,
+            },
+            open(self.name + ".dill", "wb"),
+        )
+
+
+def load_experiment(name: str):
+    saved = dill.load(open(name + ".dill", "rb"))
+    nn = NeuralNetwork(Model())
+    nn.epsilon = saved["epsilon"]
+    nn.gamma = saved["gamma"]
+    nn.model = models.load_model(name + "_nn")
+    ex = Experiment(
+        nn,
+        n_games=saved["n_games"],
+        keep_memory=saved["keep_memory"],
+        n_episodes=saved["n_episodes"],
+        n_epochs=saved["n_epochs"],
+        shuffle_input=saved["shuffle_input"],
+        name=saved["name"],
+    )
+    ex.memories = saved["memories"]
+    ex.episode = saved["episode"]
+    ex.points = saved["points"]
+    ex.loss = saved["loss"]
+    return ex

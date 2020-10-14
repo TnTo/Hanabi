@@ -1,9 +1,9 @@
 # Single Dumb NN
 
-from Experiment import NeuralNetwork, Experiment
+from Experiment import NeuralNetwork, Experiment, load_experiment
 import tensorflow.keras as keras
 import os.path as path
-import pickle
+import dill
 
 import cProfile
 import pstats
@@ -19,18 +19,26 @@ Q = keras.layers.Dense(1)(hidden2)
 model = keras.Model(inputs=inputs, outputs=Q)
 model.summary()
 
-name = 'exp1'
+name = "exp1"
 
-if path.exists(name+'.pickle'):
-    ex = pickle.load(open(name+'.pickle', 'rb'))
+if path.exists(name + ".dill"):
+    ex = load_experiment(name)
 else:
-    ex = Experiment(NeuralNetwork(model), name=name, n_games=20, n_episodes=50, n_epochs=25, keep_memory=True)
+    ex = Experiment(
+        NeuralNetwork(model),
+        name=name,
+        n_games=20,
+        n_episodes=50,
+        n_epochs=25,
+        keep_memory=True,
+    )
 
 ex.run()
 ex.save()
 
 profile.disable()
-with open("profile.txt", "wb") as f:
-    ps = pstats.Stats(profile)
-    ps.sort_stats('cumtime')
+with open(name + "_profile.txt", "w") as f:
+    ps = pstats.Stats(profile, stream=f)
+    ps.strip_dirs()
+    ps.sort_stats("cumtime")
     ps.print_stats()
