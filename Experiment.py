@@ -199,15 +199,15 @@ class Experiment:
         np.savetxt(path.join(self.name, "points.csv"), np.array(self.points))
         np.savetxt(path.join(self.name, "loss.csv"), np.array(self.loss))
 
-        plt.plot([mean(episode) for episode in self.points])
-        plt.title("Points " + self.name)
-        plt.savefig(path.join(self.name, "points.pdf"))
-
-        plt.close()
-
         plt.plot([episode[-1] for episode in self.loss])
         plt.title("Loss " + self.name)
         plt.savefig(path.join(self.name, "loss.pdf"))
+
+        plt.close()
+
+        plt.plot([mean(episode) for episode in self.points])
+        plt.title("Points " + self.name)
+        plt.savefig(path.join(self.name, "points.pdf"))
 
     def save_status(self):
         self.nn.model.save(self.name + "_nn")
