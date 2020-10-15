@@ -230,13 +230,13 @@ class Experiment:
         )
 
 
-def load_experiment(name: str):
+def load_experiment(name: str, NN=NeuralNetwork, Exp=Experiment):
     saved = dill.load(open(name + ".dill", "rb"))
-    nn = NeuralNetwork(Model())
+    nn = NN(Model())
     nn.epsilon = saved["epsilon"]
     nn.gamma = saved["gamma"]
     nn.model = models.load_model(name + "_nn")
-    ex = Experiment(
+    ex = Exp(
         nn,
         n_games=saved["n_games"],
         keep_memory=saved["keep_memory"],

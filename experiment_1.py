@@ -3,7 +3,6 @@
 from Experiment import NeuralNetwork, Experiment, load_experiment
 import tensorflow.keras as keras
 import os.path as path
-import dill
 
 import cProfile
 import pstats
