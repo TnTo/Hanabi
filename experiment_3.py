@@ -13,17 +13,17 @@ profile.enable()
 
 # Create model
 inputs = keras.Input(shape=(292,))
-hidden1 = keras.layers.Dense(1000, activation="softplus")(inputs)
-hidden2 = keras.layers.Dense(1000, activation="softplus")(hidden1)
-hidden3 = keras.layers.Dense(500, activation="softplus")(hidden2)
+hidden1 = keras.layers.Dense(500, activation="softplus")(inputs)
+hidden2 = keras.layers.Dense(250, activation="softplus")(hidden1)
+hidden3 = keras.layers.Dense(50, activation="softplus")(hidden2)
 Q = keras.layers.Dense(1)(hidden3)
 model = keras.Model(inputs=inputs, outputs=Q)
 model.summary()
 
-name = "exp4"
+name = "exp3"
 
 
-class NeuralNetwork4(NeuralNetwork):
+class NeuralNetwork3(NeuralNetwork):
     def train(self, memories, n_epochs, shuffle_input):
         x = np.empty((0, self.model.input_shape[1]))
         y = np.empty((0, 1))
@@ -46,22 +46,26 @@ class NeuralNetwork4(NeuralNetwork):
         )
 
 
-class Experiment4(Experiment):
+class Experiment3(Experiment):
     def update_nn(self):
-        self.nn.epsilon = 0.95
-        self.nn.gamma = 0.95
+        if self.episode > 30:
+            self.nn.epsilon = 0.95
+        elif self.episode > 10:
+            self.nn.epsilon = 0.50
+        if self.episode > 10:
+            self.nn.gamma = 0.95
 
 
 if path.exists(name + ".dill"):
-    ex = load_experiment(name, NN=NeuralNetwork4, Exp=Experiment4)
+    ex = load_experiment(name, NN=NeuralNetwork3, Exp=Experiment3)
 else:
-    ex = Experiment4(
-        NeuralNetwork4(model),
+    ex = Experiment3(
+        NeuralNetwork3(model),
         name=name,
-        n_games=1000,
+        n_games=200,
         n_episodes=50,
         keep_memory=False,
-        n_epochs=500,
+        n_epochs=200,
     )
 
 ex.run()
