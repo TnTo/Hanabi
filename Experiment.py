@@ -197,6 +197,7 @@ class Experiment:
             pass
         dill.dump(self.memories, open(path.join(self.name, "memories.dill"), "wb"))
         np.savetxt(path.join(self.name, "points.csv"), np.array(self.points))
+        self.loss = [i + [np.nan] * (self.n_epochs - len(i)) for i in self.loss]
         np.savetxt(path.join(self.name, "loss.csv"), np.array(self.loss))
 
         plt.plot([episode[-1] for episode in self.loss])

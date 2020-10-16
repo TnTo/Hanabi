@@ -37,7 +37,11 @@ class NeuralNetwork2(NeuralNetwork):
             y=y,
             epochs=n_epochs,
             shuffle=shuffle_input,
-            callbacks=[keras.callbacks.EarlyStopping(monitor='loss', min_delta=0.05, patience=5)],
+            callbacks=[
+                keras.callbacks.EarlyStopping(
+                    monitor="loss", min_delta=0.05, patience=5
+                )
+            ],
         )
 
 
