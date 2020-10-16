@@ -20,7 +20,7 @@ Q = keras.layers.Dense(1)(hidden3)
 model = keras.Model(inputs=inputs, outputs=Q)
 model.summary()
 
-name = "exp3"
+name = "exp4"
 
 
 class NeuralNetwork3(NeuralNetwork):
