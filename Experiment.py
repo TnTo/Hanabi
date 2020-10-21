@@ -30,10 +30,10 @@ class Memory:
 
 
 class NeuralNetwork(InputSource):
-    def __init__(self, model: Model):
+    def __init__(self, model: Model, gamma: float = 0.95, epsilon: float = 0.95):
         self.model = model
-        self.epsilon = 0.95
-        self.gamma = 0.95
+        self.epsilon = epsilon
+        self.gamma = gamma
         self.model.compile(loss="mse", optimizer="rmsprop")
 
     def availableActions(self, game: Game) -> List[Action]:
