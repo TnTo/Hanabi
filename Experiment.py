@@ -207,7 +207,7 @@ class Experiment:
         self.loss = [i + [np.nan] * (self.n_epochs - len(i)) for i in self.loss]
         np.savetxt(path.join(self.name, "loss.csv"), np.array(self.loss))
 
-        plt.plot([episode[-1] for episode in self.loss])
+        plt.plot([np.nanmin(episode) for episode in self.loss])
         plt.title("Loss " + self.name)
         plt.savefig(path.join(self.name, "loss.pdf"))
 
