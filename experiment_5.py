@@ -12,17 +12,24 @@ profile.enable()
 
 # Create model
 inputs = keras.Input(shape=(292,))
-hidden = keras.layers.Dense(1, activation="selu")(inputs)
-Q = keras.layers.Dense(1)(hidden)
+hidden1 = keras.layers.Dense(500, activation="softplus")(inputs)
+Q = keras.layers.Dense(1)(hidden1)
 model = keras.Model(inputs=inputs, outputs=Q)
 model.summary()
 
-name = "hanabi"
+name = "exp5"
 
 if path.exists(name + ".dill"):
     ex = load_experiment(name)
 else:
-    ex = Experiment(NeuralNetwork(model), name=name, n_games=3, n_episodes=2)
+    ex = Experiment(
+        NeuralNetwork(model),
+        name=name,
+        n_games=10,
+        n_episodes=50,
+        keep_memory=False,
+        n_epochs=1000,
+    )
 
 ex.run()
 ex.save()
