@@ -251,6 +251,7 @@ class GameData(Data):
     turn: int
     lifes: int
     hints: int
+    ended: bool
     piles: Dict[Color, Union[Number, None]]
     discarded: Dict[Color, Dict[Number, int]]
     players: List[PlayerData]
@@ -336,10 +337,7 @@ class Game:
                     self.discardedTiles.append(action.tile)
         return action.save(player=index)
 
-    def next_turn(self):
-        self.turn += 1
-        self.players.append(self.players[0])
-        self.players.pop(0)
+    def is_ended(self) -> bool:
         if set([self.piles[color] for color in Color]) == set([Number.FIVE]):
             self.ended = True
         if self.lifes == 0:
@@ -351,6 +349,12 @@ class Game:
                 self.lastRound -= 1
         if self.lastRound == 0:
             self.ended = True
+        return self.ended
+
+    def next_player(self):
+        self.turn += 1
+        self.players.append(self.players[0])
+        self.players.pop(0)
 
     def score(self) -> int:
         score: int = 0
@@ -369,6 +373,7 @@ class Game:
             turn=self.turn,
             lifes=self.lifes,
             hints=self.hints,
+            ended=self.ended,
             piles={color: self.piles[color] for color in Color},
             discarded=self.count_discarded(),
             players=[player.save() for player in self.players],

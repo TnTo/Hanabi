@@ -11,7 +11,7 @@ from Hanabi import (
     ActionData,
     N_PLAYERS,
 )
-from tensorflow.keras import Model, models
+from tensorflow.keras import Model, models, callbacks
 from typing import List
 from random import random, choice
 from dataclasses import dataclass
@@ -32,8 +32,8 @@ class Memory:
 class NeuralNetwork(InputSource):
     def __init__(self, model: Model):
         self.model = model
-        self.epsilon = 0.0
-        self.gamma = 0.0
+        self.epsilon = 0.95
+        self.gamma = 0.95
         self.model.compile(loss="mse", optimizer="rmsprop")
 
     def availableActions(self, game: Game) -> List[Action]:
@@ -99,13 +99,16 @@ class NeuralNetwork(InputSource):
             return actions[np.argmax(Qs)]
 
     def Q(self, game: GameData) -> float:
-        actions = self.availableActionsData(game)
-        gamedata = game.toarray()
-        Xs = np.array(
-            list(map(lambda x: np.concatenate((gamedata, x.toarray())), actions))
-        )
+        if game.ended:
+            return game.score()
+        else:
+            actions = self.availableActionsData(game)
+            gamedata = game.toarray()
+            Xs = np.array(
+                list(map(lambda x: np.concatenate((gamedata, x.toarray())), actions))
+            )
 
-        return game.score() + self.gamma * np.max(self.model.predict(Xs))
+            return game.score() + self.gamma * np.max(self.model.predict(Xs))
 
     def train(self, memories: List[Memory], n_epochs, shuffle_input):
         x = np.empty((0, self.model.input_shape[1]))
@@ -116,7 +119,15 @@ class NeuralNetwork(InputSource):
             )
             y = np.vstack((y, memory.post))
         y = np.vectorize(self.Q)(y)
-        return self.model.fit(x=x, y=y, epochs=n_epochs, shuffle=shuffle_input)
+        return self.model.fit(
+            x=x,
+            y=y,
+            epochs=n_epochs,
+            shuffle=shuffle_input,
+            callbacks=[
+                callbacks.EarlyStopping(monitor="loss", min_delta=0.05, patience=10)
+            ],
+        )
 
 
 class Experiment:
@@ -144,12 +155,7 @@ class Experiment:
         self.name = name
 
     def update_nn(self):
-        if self.episode >= self.n_episodes / 2:
-            self.nn.epsilon = 0.95
-        elif self.episode >= self.n_episodes / 4:
-            self.nn.epsilon = 0.5
-        if self.episode > 1:
-            self.nn.gamma = 0.95
+        pass
 
     def create_episode(self):
         self.episode += 1
@@ -164,8 +170,9 @@ class Experiment:
                 pre = game.save()
                 action = self.nn.move(game)
                 game.move(game.players[0], action)
+                game.is_ended()
                 self.memories.append(Memory(pre, action.save(), game.save()))
-                game.next_turn()
+                game.next_player()
         self.points.append([game.score() for game in self.games])
         print("Points:")
         print(self.points[-1])
