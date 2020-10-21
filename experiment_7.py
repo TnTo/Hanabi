@@ -20,7 +20,7 @@ Q = keras.layers.Dense(1)(hidden3)
 model = keras.Model(inputs=inputs, outputs=Q)
 model.summary()
 
-name = "exp6"
+name = "exp7"
 
 if path.exists(name + ".dill"):
     ex = load_experiment(name)
