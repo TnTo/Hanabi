@@ -28,7 +28,7 @@ else:
     ex = Experiment(
         NeuralNetwork(model, epsilon=0.5),
         name=name,
-        n_games=50,
+        n_games=10,
         n_episodes=50,
         keep_memory=False,
         n_epochs=1000,
