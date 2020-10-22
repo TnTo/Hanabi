@@ -13,7 +13,7 @@ from Hanabi import (
 )
 from tensorflow.keras import Model, models, callbacks
 from typing import List
-from random import random, choice
+from random import random, choice, sample
 from dataclasses import dataclass
 import numpy as np
 from os import mkdir, path
@@ -135,7 +135,7 @@ class Experiment:
         self,
         nn: NeuralNetwork,
         n_games: int = 10,
-        keep_memory: bool = False,
+        keep_memory: int = 0,
         n_episodes: int = 10,
         n_epochs: int = 25,
         shuffle_input: bool = True,
@@ -159,8 +159,7 @@ class Experiment:
 
     def create_episode(self):
         self.episode += 1
-        if not self.keep_memory:
-            self.memories.clear()
+        self.memory = sample(self.memory, self.keep_memory)
         self.update_nn()
         self.games = [Game(self.nn) for _ in range(self.n_games)]
 
