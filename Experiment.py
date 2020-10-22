@@ -159,7 +159,8 @@ class Experiment:
 
     def create_episode(self):
         self.episode += 1
-        self.memory = sample(self.memory, self.keep_memory)
+        if self.memory > self.keep_memory:
+            self.memory = sample(self.memory, self.keep_memory)
         self.update_nn()
         self.games = [Game(self.nn) for _ in range(self.n_games)]
 
