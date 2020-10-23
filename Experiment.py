@@ -161,8 +161,10 @@ class Experiment:
         self.episode += 1
         if self.keep_memory == 0:
             self.memories.clear()
-        elif self.memories > self.keep_memory:
-            self.memorie = self.memories.sort(key=lambda m: m.post.score(), reverse=True)[0:self.keep_memory]
+        elif len(self.memories) > self.keep_memory:
+            self.memories = self.memories.sort(
+                key=lambda m: m.post.score(), reverse=True
+            )[0 : self.keep_memory]
         self.update_nn()
         self.games = [Game(self.nn) for _ in range(self.n_games)]
 
