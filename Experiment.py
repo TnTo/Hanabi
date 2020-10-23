@@ -13,7 +13,7 @@ from Hanabi import (
 )
 from tensorflow.keras import Model, models, callbacks
 from typing import List
-from random import random, choice, sample
+from random import random, choice
 from dataclasses import dataclass
 import numpy as np
 from os import mkdir, path
@@ -159,8 +159,10 @@ class Experiment:
 
     def create_episode(self):
         self.episode += 1
-        if self.memory > self.keep_memory:
-            self.memory = sample(self.memory, self.keep_memory)
+        if self.keep_memory == 0:
+            self.memories.clear()
+        elif self.memories > self.keep_memory:
+            self.memorie = self.memories.sort(key=lambda m: m.post.score(), reverse=True)[0:self.keep_memory]
         self.update_nn()
         self.games = [Game(self.nn) for _ in range(self.n_games)]
 
@@ -214,6 +216,8 @@ class Experiment:
         plt.close()
 
         plt.plot([mean(episode) for episode in self.points])
+        plt.plot([max(episode) for episode in self.points])
+        plt.plot([min(episode) for episode in self.points])
         plt.title("Points " + self.name)
         plt.savefig(path.join(self.name, "points.pdf"))
 
