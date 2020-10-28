@@ -349,6 +349,8 @@ class Game:
                 self.lastRound -= 1
         if self.lastRound == 0:
             self.ended = True
+        if self.turn > 120:
+            self.ended = True
         return self.ended
 
     def next_player(self):
