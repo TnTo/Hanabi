@@ -22,7 +22,9 @@ name = "hanabi"
 if path.exists(name + ".dill"):
     ex = load_experiment(name)
 else:
-    ex = Experiment(NeuralNetwork(model), name=name, n_games=3, n_episodes=2, keep_memory=1)
+    ex = Experiment(
+        NeuralNetwork(model), name=name, n_games=3, n_episodes=2, keep_memory=1
+    )
 
 ex.run()
 ex.save()
