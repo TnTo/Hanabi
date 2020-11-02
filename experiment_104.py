@@ -132,7 +132,7 @@ for e in range(N_EPISODES):
         model,
         INPUT,
     )
-loss = train(GAMMA, memories, loss, model, INPUT)
+    loss = train(GAMMA, memories, loss, model, INPUT)
 save(memories, points, loss, model, NAME)
 
 # Exploit
@@ -151,7 +151,7 @@ for e in range(N_EPISODES):
         model,
         INPUT,
     )
-loss = train(GAMMA, memories, loss, model, INPUT)
+    loss = train(GAMMA, memories, loss, model, INPUT)
 save(memories, points, loss, model, NAME)
 
 # Test
