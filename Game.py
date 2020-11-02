@@ -419,8 +419,11 @@ def vmove(
 
 # for learning
 def get_memories(
-    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE], n: int
+    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE],
+    n: int,
 ) -> NDArray[(Any, DGAME + DACTION + DGAME), DTYPE]:
+    if n == 0:
+        return np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE)
     if memories.shape[0] < n:
         return memories
     else:
@@ -428,7 +431,7 @@ def get_memories(
 
 
 def get_games(
-    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE], new: int, old: int
+    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE], new: int, old: int, sample_memories: bool = True,
 ) -> NDArray[(Any, DGAME), DTYPE]:
     games = np.empty((0, DGAME), dtype=DTYPE)
     for _ in range(new):
@@ -436,14 +439,24 @@ def get_games(
     if memories.shape[0] < old:
         games = np.vstack((games, memories[:, :DGAME]))
     else:
-        games = np.vstack(
-            (
-                games,
-                memories[
-                    np.random.choice(memories.shape[0], size=old, replace=False), :DGAME
-                ],
+        if sample_memories:
+            games = np.vstack(
+                (
+                    games,
+                    memories[
+                        np.random.choice(memories.shape[0], size=old, replace=False), :DGAME
+                    ],
+                )
             )
-        )
+        else:
+            games = np.vstack(
+                (
+                    games,
+                    memories[
+                        -old:, :DGAME
+                    ],
+                )
+            )
     return games
 
 
@@ -459,16 +472,13 @@ def Q(
     pred = pred.reshape(-1, MAX_ACTION)
     return vscore(memories[:, -DGAME:]) + np.multiply(
         (~vis_ended(memories[:, -DGAME:])).astype(int),
-        np.nanmax(
-            pred, axis=1
-        ),
+        np.nanmax(pred, axis=1),
     )
 
 
 # for workflow
 def play_game(
     epsilon: float,
-    gamma: float,
     memory_size: int,
     new: int,
     old: int,
@@ -476,9 +486,10 @@ def play_game(
     points: NDArray[(Any, 4), float],
     model: keras.Model,
     INPUT: List[int],
+    sample_memories: bool = True,
 ) -> Tuple[NDArray[(Any, DGAME + DACTION + DGAME), DTYPE], NDArray[(Any, 4), float]]:
     memories = get_memories(memories, memory_size)
-    games = get_games(memories, new, old)
+    games = get_games(memories, new, old, sample_memories=sample_memories)
     while (~vis_ended(games)).all():
         actions = vmove(games[~vis_ended(games)], epsilon, model, INPUT)
         memories = np.vstack((memories, actions))
@@ -500,6 +511,7 @@ def train(
     loss: NDArray[(Any, 1), float],
     model: keras.Model,
     INPUT: List[int],
+    patience: int = 20,
 ) -> NDArray[(Any, 1), float]:
     loss = np.vstack(
         (
@@ -511,7 +523,10 @@ def train(
                     epochs=1000,
                     callbacks=[
                         keras.callbacks.EarlyStopping(
-                            monitor="loss", min_delta=0.05, patience=10
+                            monitor="loss",
+                            min_delta=1,
+                            patience=patience,
+                            restore_best_weights=True,
                         )
                     ],
                 ).history["loss"]
@@ -527,13 +542,18 @@ def save(
     loss: NDArray[(Any, 1), float],
     model: keras.Model,
     path: str,
-    last: bool = False
+    last: bool = False,
+    first: bool = False
 ):
     if not os.path.exists(path):
         os.mkdir(path)
     if last:
         np.savetxt(os.path.join(path, "last_memories.csv"), memories)
         np.savetxt(os.path.join(path, "last_points.csv"), points)
+    elif first:
+        np.savetxt(os.path.join(path, "memories_t0.csv"), memories)
+        np.savetxt(os.path.join(path, "loss_t0.csv"), loss)
+        keras.models.save_model(model, os.path.join(path, "nn_t0"))
     else:
         np.save(os.path.join(path, "memories.npy"), memories)
         np.save(os.path.join(path, "points.npy"), points)
@@ -544,7 +564,7 @@ def save(
 def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], path: str):
     plt.plot(loss)
     plt.title("Loss")
-    plt.savefig(os.path.join(path, "loss.pdf"))
+    plt.savefig(os.path.join(path, "loss.png"))
     plt.close()
 
     plt.plot(points[:, 0])
@@ -553,4 +573,4 @@ def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], path:
     plt.plot(points[:, 3])
     plt.title("Points")
     plt.legend(["min", "mean", "median", "max"])
-    plt.savefig(os.path.join(path, "points.pdf"))
+    plt.savefig(os.path.join(path, "points.png"))

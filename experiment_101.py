@@ -21,8 +21,8 @@ from Game import (
 NAME: str = "ex101"
 MEMORY_SIZE: int = 100
 N_EPISODES: int = 20
-N_NEW_GAMES: int = 20
-N_OLD_GAMES: int = 20
+N_NEW_GAMES: int = 50
+N_OLD_GAMES: int = 50
 EPSILON: float = 0.5
 GAMMA: float = 0.95
 
@@ -59,12 +59,17 @@ else:
     points = np.empty((0, 4))
     loss = np.empty((0, 1))
 
+    memories, points = play_game(
+        0, MEMORY_SIZE, 5000, 0, memories, points, model, INPUT
+    )
+    loss = train(0, memories, loss, model, INPUT)
+    save(memories, points, loss, model, NAME, last=True)
+
 
 for e in range(N_EPISODES):
     print("EPISODE ", e)
     memories, points = play_game(
         EPSILON,
-        GAMMA,
         MEMORY_SIZE,
         N_NEW_GAMES,
         N_OLD_GAMES,
@@ -77,9 +82,7 @@ for e in range(N_EPISODES):
     save(memories, points, loss, model, NAME)
 
 print("RESULT")
-memories, points = play_game(
-    1, GAMMA, 0, N_NEW_GAMES, 0, memories, points, model, INPUT
-)
+memories, points = play_game(1, 0, N_NEW_GAMES, 0, memories, points, model, INPUT)
 save(memories, points, loss, model, NAME, last=True)
 
 plot(loss, points, NAME)
