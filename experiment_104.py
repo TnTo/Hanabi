@@ -56,7 +56,7 @@ else:
     model = keras.Model(inputs=inputs, outputs=Q)
     model.summary()
     model.compile(
-        loss="mse", optimizer=keras.optimizer.RMSprop(learning_rate=0.01, momentum=0.1)
+        loss="mse", optimizers=keras.optimizer.RMSprop(learning_rate=0.01, momentum=0.1)
     )
 
     memories = np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE)
