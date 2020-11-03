@@ -50,12 +50,14 @@ if os.path.exists(NAME):
     loss = np.load(os.path.join(NAME, "loss.npy"))
 else:
     inputs = keras.Input(shape=(len(INPUT),))
-    hidden1 = keras.layers.Dense(10, activation="softplus")(inputs)
+    hidden1 = keras.layers.Dense(100, activation="softplus")(inputs)
     hidden2 = keras.layers.Dense(10, activation="softplus")(hidden1)
     Q = keras.layers.Dense(1, activation="relu")(hidden2)
     model = keras.Model(inputs=inputs, outputs=Q)
     model.summary()
-    model.compile(loss="mse", optimizer="rmsprop")
+    model.compile(
+        loss="mse", optimizer=keras.optimizer.RMSprop(learning_rate=0.01, momentum=0.1)
+    )
 
     memories = np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE)
     points = np.empty((0, 4))
@@ -105,7 +107,7 @@ plt.show()
 save(memories, points, loss, model, NAME, first=True)
 
 plt.hist(vscore(memories[:, -DGAME:]))
-plt.savefig(os.path.join(NAME, 'score_memories_t0.png'))
+plt.savefig(os.path.join(NAME, "score_memories_t0.png"))
 
 loss = train(0, memories, loss, model, INPUT, patience=2)
 loss = train(GAMMA, memories, loss, model, INPUT)

@@ -431,7 +431,10 @@ def get_memories(
 
 
 def get_games(
-    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE], new: int, old: int, sample_memories: bool = True,
+    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE],
+    new: int,
+    old: int,
+    sample_memories: bool = True,
 ) -> NDArray[(Any, DGAME), DTYPE]:
     games = np.empty((0, DGAME), dtype=DTYPE)
     for _ in range(new):
@@ -444,7 +447,8 @@ def get_games(
                 (
                     games,
                     memories[
-                        np.random.choice(memories.shape[0], size=old, replace=False), :DGAME
+                        np.random.choice(memories.shape[0], size=old, replace=False),
+                        :DGAME,
                     ],
                 )
             )
@@ -452,9 +456,7 @@ def get_games(
             games = np.vstack(
                 (
                     games,
-                    memories[
-                        -old:, :DGAME
-                    ],
+                    memories[-old:, :DGAME],
                 )
             )
     return games
@@ -543,7 +545,7 @@ def save(
     model: keras.Model,
     path: str,
     last: bool = False,
-    first: bool = False
+    first: bool = False,
 ):
     if not os.path.exists(path):
         os.mkdir(path)
