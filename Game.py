@@ -528,7 +528,7 @@ def train(
                             monitor="loss",
                             min_delta=1,
                             patience=patience,
-                            restore_best_weights=True,
+                            restore_best_weights=False,
                         )
                     ],
                 ).history["loss"]
