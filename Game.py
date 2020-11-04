@@ -468,14 +468,17 @@ def Q(
     model: keras.Model,
     INPUT: List[int],
 ) -> NDArray[(Any, 1), float]:
-    actions = vavailable_moves(memories[:, -DGAME:])
-    actions = actions.reshape((-1, DGAME + DACTION))
-    pred = model.predict(actions[:, INPUT])
-    pred = pred.reshape(-1, MAX_ACTION)
-    return vscore(memories[:, -DGAME:]) + np.multiply(
-        (~vis_ended(memories[:, -DGAME:])).astype(int),
-        np.nanmax(pred, axis=1),
-    )
+    if gamma == 0:
+        return vscore(memories[:, -DGAME:])
+    else:
+        actions = vavailable_moves(memories[:, -DGAME:])
+        actions = actions.reshape((-1, DGAME + DACTION))
+        pred = model.predict(actions[:, INPUT])
+        pred = pred.reshape(-1, MAX_ACTION)
+        return vscore(memories[:, -DGAME:]) + gamma * np.multiply(
+            (~vis_ended(memories[:, -DGAME:])).astype(int),
+            np.nanmax(pred, axis=1),
+        )
 
 
 # for workflow
