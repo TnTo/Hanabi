@@ -179,7 +179,7 @@ plot(loss, points, NAME)
 save(memories, points, loss, model, NAME)
 
 # Exploit
-N_EPISODES = 50
+N_EPISODES = 20
 EPSILON = 0.90
 
 for e in range(N_EPISODES):
