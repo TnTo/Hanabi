@@ -84,8 +84,8 @@ else:
 
 # CREATE MEMORIES DB
 MEMORY_SIZE: int = 10 ** 5
-N_NEW_GAMES: int = 500
-N_OLD_GAMES: int = 1000
+N_NEW_GAMES: int = 50
+N_OLD_GAMES: int = 100
 EPSILON: float = 0
 GAMMA: float = 0.95
 
@@ -183,7 +183,7 @@ for e in range(N_EPISODES):
     _, points = play_game(
         1,
         MEMORY_SIZE,
-        N_NEW_GAMES,
+        10,
         0,
         np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE),
         points,
@@ -216,7 +216,7 @@ for e in range(N_EPISODES):
     _, points = play_game(
         1,
         MEMORY_SIZE,
-        N_NEW_GAMES,
+        10,
         0,
         np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE),
         points,
@@ -236,7 +236,7 @@ print("Testing")
 memories, points = play_game(
     EPSILON,
     MEMORY_SIZE,
-    N_NEW_GAMES,
+    100,
     0,
     memories,
     points,
