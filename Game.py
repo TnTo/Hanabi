@@ -44,9 +44,9 @@ LAST_ROUND = [PILES[-1] + 1]
 DGAME = LAST_ROUND[-1] + 1
 
 # Action
-HINT_COLOR = [INDEX[-1] + 1]
-HINT_NUMBER = [HINT_COLOR[-1] + 1]
-PLAYER = [HINT_NUMBER[-1] + 1]
+HINT_NUMBER = [INDEX[-1] + 1]
+HINT_COLOR = [HINT_NUMBER[-1] + 1]
+PLAYER = [HINT_COLOR[-1] + 1]
 PLAY = [PLAYER[-1] + 1]
 DISCARD = [PLAY[-1] + 1]
 
@@ -517,6 +517,7 @@ def train(
     model: keras.Model,
     INPUT: List[int],
     patience: int = 20,
+    name: str = "hanabi",
 ) -> NDArray[(Any, 1), float]:
     np.random.shuffle(memories)
     loss = np.vstack(
@@ -535,7 +536,8 @@ def train(
                             min_delta=1,
                             patience=patience,
                             restore_best_weights=True,
-                        )
+                        ),
+                        keras.callbacks.TensorBoard(log_dir=name + "/logs"),
                     ],
                 ).history["loss"]
             ),
@@ -582,3 +584,32 @@ def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], path:
     plt.title("Points")
     plt.legend(["min", "mean", "median", "max"])
     plt.savefig(os.path.join(path, "points.png"))
+
+
+def print_game(game) -> None:
+    print("LIFES ", game[LIFES])
+    print("HINTS ", game[HINTS])
+    print("DECK")
+    print(game[DECK])
+    print("DISCARDED")
+    print(game[DISCARDED])
+    for p in range(N_PLAYER):
+        print("PLAYER ", p + 1)
+        for t in range(HAND_SIZE):
+            print(
+                game[PLAYERS][p * DPLAYER : (p + 1) * DPLAYER][
+                    t * DHANDTILE : (t + 1) * DHANDTILE
+                ]
+            )
+    print("PILES ", game[PILES])
+
+
+def print_action(action) -> None:
+    print("HINT")
+    print("Number ", action[HINT_NUMBER])
+    print("Color ", action[HINT_COLOR])
+    print("Player ", action[PLAYER])
+    print("PLAY")
+    print("Tile ", action[PLAY])
+    print("DISCARD")
+    print("Tile ", action[DISCARD])
