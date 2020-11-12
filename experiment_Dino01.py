@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow.keras as keras
 import tensorflow as tf
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 from Game import (
     DGAME,
@@ -16,7 +16,7 @@ from Game import (
     train,
     save,
     plot,
-    # vscore
+    vscore
 )
 from Game import (
     LIFES,
@@ -36,7 +36,7 @@ from Game import (
     DISCARD,
 )
 
-NAME: str = "Dino01"
+NAME: str = "Dino01m"
 
 SEED = 123456
 random.seed(SEED)
@@ -83,83 +83,75 @@ else:
 
 
 # CREATE MEMORIES DB
-MEMORY_SIZE: int = 10 ** 5
+MEMORY_SIZE: int = 10 ** 3
 N_NEW_GAMES: int = 50
 N_OLD_GAMES: int = 100
 EPSILON: float = 0
 GAMMA: float = 0.95
 
-# i = 1
-# while memories.shape[0] < MEMORY_SIZE:
-#     print("Create memories, round ", i)
-#     memories, _ = play_game(
-#         EPSILON,
-#         MEMORY_SIZE,
-#         N_NEW_GAMES,
-#         N_OLD_GAMES,
-#         memories,
-#         np.empty((0, 4)),
-#         model,
-#         INPUT,
-#         sample_memories=False,
-#     )
-#     i += 1
+i = 1
+while memories.shape[0] < MEMORY_SIZE:
+    print("Create memories, round ", i)
+    memories, _ = play_game(
+        EPSILON,
+        MEMORY_SIZE,
+        N_NEW_GAMES,
+        N_OLD_GAMES,
+        memories,
+        np.empty((0, 4)),
+        model,
+        INPUT,
+        sample_memories=False,
+    )
+    i += 1
 
-# for j in range(i):
-#     print("Improve memories, round ", j + 1, " of ", i)
-#     memories, _ = play_game(
-#         EPSILON,
-#         MEMORY_SIZE,
-#         N_NEW_GAMES,
-#         N_OLD_GAMES,
-#         memories,
-#         np.empty((0, 4)),
-#         model,
-#         INPUT,
-#         sample_memories=False,
-#     )
+for j in range(i):
+    print("Improve memories, round ", j + 1, " of ", i)
+    memories, _ = play_game(
+        EPSILON,
+        MEMORY_SIZE,
+        N_NEW_GAMES,
+        N_OLD_GAMES,
+        memories,
+        np.empty((0, 4)),
+        model,
+        INPUT,
+        sample_memories=False,
+    )
 
-# plt.hist(vscore(memories[:, -DGAME:]))
-# plt.show()
+plt.hist(vscore(memories[:, -DGAME:]))
+plt.show()
 
-# save(memories, points, loss, model, NAME, first=True)
+save(memories, points, loss, model, NAME, first=True)
 
-# plt.hist(vscore(memories[:, -DGAME:]))
-# plt.savefig(os.path.join(NAME, "score_memories_t0.png"))
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)
 
-# random.seed(SEED)
-# np.random.seed(SEED)
-# tf.random.set_seed(SEED)
+loss = train(0, memories, loss, model, INPUT, patience=50)
+loss = train(GAMMA, memories, loss, model, INPUT, patience=50)
 
-# loss = train(0, memories, loss, model, INPUT, patience=2)
-# loss = train(GAMMA, memories, loss, model, INPUT)
-
-# save(memories, points, loss, model, NAME, first=True)
+save(memories, points, loss, model, NAME, first=True)
 
 # Reset
-# points = np.empty((0, 4))
-# loss = np.empty((0, 1))
+points = np.empty((0, 4))
+loss = np.empty((0, 1))
 
-# # Test
-# # EPSILON = 1
-# # N_OLD_GAMES = 0
+# Test
+print("Testing")
+_, points = play_game(
+    1,
+    MEMORY_SIZE,
+    N_NEW_GAMES,
+    0,
+    np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE),
+    points,
+    model,
+    INPUT,
+)
 
-# memories = np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE)
-
-# print("Testing")
-# _, points = play_game(
-#     EPSILON,
-#     MEMORY_SIZE,
-#     N_NEW_GAMES,
-#     N_OLD_GAMES,
-#     np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE),
-#     points,
-#     model,
-#     INPUT,
-# )
-
-# plt.hist(points)
-# plt.savefig(os.path.join(NAME, "points_t0.png"))
+plt.hist(points)
+plt.savefig(os.path.join(NAME, "points_t0.png"))
 
 # Explore
 N_EPISODES: int = 20
