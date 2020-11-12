@@ -526,12 +526,14 @@ def train(
                     x=memories[:, INPUT],
                     y=Q(memories, gamma, model, INPUT),
                     epochs=1000,
+                    validation_split=0.2,
+                    batch_size=512,
                     callbacks=[
                         keras.callbacks.EarlyStopping(
-                            monitor="loss",
+                            monitor="val_loss",
                             min_delta=1,
                             patience=patience,
-                            restore_best_weights=False,
+                            restore_best_weights=True,
                         )
                     ],
                 ).history["loss"]
