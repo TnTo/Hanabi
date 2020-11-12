@@ -97,10 +97,10 @@ def new_deck() -> NDArray[(DDECK), DTYPE]:
         for n in range(0, 1):
             for _ in range(3):
                 tiles.append((n, c))
-        for n in range(1, N_COLOR - 1):
+        for n in range(1, N_NUMBER - 1):
             for _ in range(2):
                 tiles.append((n, c))
-        for n in range(N_COLOR - 1, N_COLOR):
+        for n in range(N_NUMBER - 1, N_NUMBER):
             for _ in range(1):
                 tiles.append((n, c))
     shuffle(tiles)
@@ -176,7 +176,7 @@ def discard_tile(game: NDArray[(DGAME,), DTYPE], tile: int) -> NDArray[(DGAME,),
                 game[
                     PLAYERS[:DPLAYER][tile * DHANDTILE : (tile + 1) * DHANDTILE][:DTILE]
                 ],
-                [N_NUMBER, 1],
+                [N_NUMBER - 1, 1],
             )
         ]
     ] += 1
