@@ -518,6 +518,7 @@ def train(
     INPUT: List[int],
     patience: int = 20,
 ) -> NDArray[(Any, 1), float]:
+    np.random.shuffle(memories)
     loss = np.vstack(
         (
             loss,
