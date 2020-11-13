@@ -72,7 +72,7 @@ else:
     inputs = keras.Input(shape=(len(INPUT),))
     hidden1 = keras.layers.Dense(512, activation="sigmoid")(inputs)
     hidden2 = keras.layers.Dense(512, activation="sigmoid")(hidden1)
-    Q = keras.layers.Dense(1, activation="relu")(hidden2)
+    Q = keras.layers.Dense(1, activation="linear")(hidden2)
     model = keras.Model(inputs=inputs, outputs=Q)
     model.summary()
     model.compile(loss="mse", optimizer=keras.optimizers.RMSprop(learning_rate=0.01))
