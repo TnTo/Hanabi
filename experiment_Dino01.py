@@ -36,7 +36,7 @@ from Game import (
     DISCARD,
 )
 
-NAME: str = "Dino01ter"
+NAME: str = "Dino01quater"
 
 SEED = 123456
 random.seed(SEED)
@@ -70,10 +70,12 @@ if os.path.exists(NAME):
     loss = np.load(os.path.join(NAME, "loss.npy"))
 else:
     inputs = keras.Input(shape=(len(INPUT),))
-    hidden1 = keras.layers.Dense(128, activation="relu")(inputs)
-    drop = keras.layers.Dropout(0.2, seed=SEED)(hidden1)
-    hidden2 = keras.layers.Dense(128, activation="relu")(drop)
-    Q = keras.layers.Dense(1, activation="linear")(hidden2)
+    hidden1 = keras.layers.Dense(64, activation="sigmoid")(inputs)
+    drop1 = keras.layers.Dropout(0.3, seed=SEED)(hidden1)
+    hidden2 = keras.layers.Dense(64, activation="softplus")(drop1)
+    drop2 = keras.layers.Dropout(0.3, seed=SEED)(hidden2)
+    hidden3 = keras.layers.Dense(32, activation="softplus")(drop2)
+    Q = keras.layers.Dense(1, activation="linear")(hidden3)
     model = keras.Model(inputs=inputs, outputs=Q)
     model.compile(loss="mse", optimizer=keras.optimizers.RMSprop(learning_rate=0.01))
     model.summary()
@@ -92,8 +94,9 @@ N_OLD_GAMES: int = 100
 EPSILON: float = 0
 GAMMA: float = 0.95
 
-i = 1
+i = 0
 while memories.shape[0] < MEMORY_SIZE:
+    i += 1
     print("Create memories, round ", i)
     memories, _ = play_game(
         EPSILON,
@@ -106,21 +109,21 @@ while memories.shape[0] < MEMORY_SIZE:
         INPUT,
         sample_memories=False,
     )
-    i += 1
+    
 
-for j in range(i):
-    print("Improve memories, round ", j + 1, " of ", i)
-    memories, _ = play_game(
-        EPSILON,
-        MEMORY_SIZE,
-        N_NEW_GAMES,
-        N_OLD_GAMES,
-        memories,
-        np.empty((0, 4)),
-        model,
-        INPUT,
-        sample_memories=False,
-    )
+# for j in range(i):
+#     print("Improve memories, round ", j + 1, " of ", i)
+#     memories, _ = play_game(
+#         EPSILON,
+#         MEMORY_SIZE,
+#         N_NEW_GAMES,
+#         N_OLD_GAMES,
+#         memories,
+#         np.empty((0, 4)),
+#         model,
+#         INPUT,
+#         sample_memories=False,
+#     )
 
 plt.hist(vscore(memories[:, -DGAME:]))
 plt.show()
@@ -131,14 +134,15 @@ random.seed(SEED)
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
-train(0, memories, loss, model, INPUT, patience=50, name=NAME)
+train(0, memories, loss, model, INPUT, name=NAME)
 
-plt.hist(model.predict(memories[:, INPUT], batch_size=500))
+plt.hist(model.predict(memories[:, INPUT], batch_size=512))
 plt.show()
 
-train(GAMMA, memories, loss, model, INPUT, patience=50, name=NAME)
+for _ in range(int(1/GAMMA/4)):
+    train(GAMMA, memories, loss, model, INPUT, name=NAME)
 
-plt.hist(model.predict(memories[:, INPUT], batch_size=500))
+plt.hist(model.predict(memories[:, INPUT], batch_size=512))
 plt.show()
 
 save(memories, points, loss, model, NAME, first=True)

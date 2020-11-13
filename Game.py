@@ -516,7 +516,7 @@ def train(
     loss: NDArray[(Any, 1), float],
     model: keras.Model,
     INPUT: List[int],
-    patience: int = 50,
+    patience: int = 100,
     name: str = "hanabi",
 ) -> NDArray[(Any, 1), float]:
     np.random.shuffle(memories)
@@ -533,7 +533,8 @@ def train(
                     callbacks=[
                         keras.callbacks.EarlyStopping(
                             monitor="loss",
-                            min_delta=0.01,
+                            # min_delta=0.01,
+                            baseline=1.0,
                             patience=patience,
                             restore_best_weights=False,
                         ),
