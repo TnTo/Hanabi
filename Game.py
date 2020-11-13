@@ -533,9 +533,9 @@ def train(
                     callbacks=[
                         keras.callbacks.EarlyStopping(
                             monitor="loss",
-                            # min_delta=0.05,
+                            min_delta=0.01,
                             patience=patience,
-                            restore_best_weights=True,
+                            restore_best_weights=False,
                         ),
                         keras.callbacks.TensorBoard(log_dir=name + "/logs"),
                     ],

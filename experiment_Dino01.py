@@ -70,8 +70,9 @@ if os.path.exists(NAME):
     loss = np.load(os.path.join(NAME, "loss.npy"))
 else:
     inputs = keras.Input(shape=(len(INPUT),))
-    hidden1 = keras.layers.Dense(128, activation="sigmoid")(inputs)
-    hidden2 = keras.layers.Dense(128, activation="relu")(hidden1)
+    hidden1 = keras.layers.Dense(128, activation="relu")(inputs)
+    drop = keras.layers.Dropout(0.2, seed=SEED)(hidden1)
+    hidden2 = keras.layers.Dense(128, activation="relu")(drop)
     Q = keras.layers.Dense(1, activation="linear")(hidden2)
     model = keras.Model(inputs=inputs, outputs=Q)
     model.compile(loss="mse", optimizer=keras.optimizers.RMSprop(learning_rate=0.01))
@@ -185,7 +186,7 @@ for e in range(N_EPISODES):
     _, points = play_game(
         1,
         MEMORY_SIZE,
-        10,
+        N_NEW_GAMES,
         0,
         np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE),
         points,
@@ -218,7 +219,7 @@ for e in range(N_EPISODES):
     _, points = play_game(
         1,
         MEMORY_SIZE,
-        10,
+        N_NEW_GAMES,
         0,
         np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE),
         points,
@@ -238,7 +239,7 @@ print("Testing")
 memories, points = play_game(
     EPSILON,
     MEMORY_SIZE,
-    100,
+    N_NEW_GAMES,
     0,
     memories,
     points,
