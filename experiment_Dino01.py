@@ -36,7 +36,7 @@ from Game import (
     DISCARD,
 )
 
-NAME: str = "Dino01m"
+NAME: str = "Dino01ter"
 
 SEED = 123456
 random.seed(SEED)
@@ -70,12 +70,14 @@ if os.path.exists(NAME):
     loss = np.load(os.path.join(NAME, "loss.npy"))
 else:
     inputs = keras.Input(shape=(len(INPUT),))
-    hidden1 = keras.layers.Dense(512, activation="sigmoid")(inputs)
-    hidden2 = keras.layers.Dense(512, activation="sigmoid")(hidden1)
+    hidden1 = keras.layers.Dense(128, activation="sigmoid")(inputs)
+    hidden2 = keras.layers.Dense(128, activation="relu")(hidden1)
     Q = keras.layers.Dense(1, activation="linear")(hidden2)
     model = keras.Model(inputs=inputs, outputs=Q)
-    model.summary()
     model.compile(loss="mse", optimizer=keras.optimizers.RMSprop(learning_rate=0.01))
+    model.summary()
+    for layer in model.layers:
+        print(layer.get_config())
 
     memories = np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE)
     points = np.empty((0, 4))
@@ -128,12 +130,12 @@ random.seed(SEED)
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
-loss = train(0, memories, loss, model, INPUT, patience=50, name=NAME)
+train(0, memories, loss, model, INPUT, patience=50, name=NAME)
 
 plt.hist(model.predict(memories[:, INPUT], batch_size=500))
 plt.show()
 
-loss = train(GAMMA, memories, loss, model, INPUT, patience=50, name=NAME)
+train(GAMMA, memories, loss, model, INPUT, patience=50, name=NAME)
 
 plt.hist(model.predict(memories[:, INPUT], batch_size=500))
 plt.show()
@@ -161,6 +163,7 @@ plt.hist(points)
 plt.savefig(os.path.join(NAME, "points_t0.png"))
 
 # Explore
+MEMORY_SIZE = 10 ** 8
 N_EPISODES: int = 20
 EPSILON = 0.5
 
