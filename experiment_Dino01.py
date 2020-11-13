@@ -109,21 +109,20 @@ while memories.shape[0] < MEMORY_SIZE:
         INPUT,
         sample_memories=False,
     )
-    
 
-# for j in range(i):
-#     print("Improve memories, round ", j + 1, " of ", i)
-#     memories, _ = play_game(
-#         EPSILON,
-#         MEMORY_SIZE,
-#         N_NEW_GAMES,
-#         N_OLD_GAMES,
-#         memories,
-#         np.empty((0, 4)),
-#         model,
-#         INPUT,
-#         sample_memories=False,
-#     )
+for j in range(int(i/4)):
+    print("Improve memories, round ", j + 1, " of ", i)
+    memories, _ = play_game(
+        EPSILON,
+        MEMORY_SIZE,
+        N_NEW_GAMES,
+        N_OLD_GAMES,
+        memories,
+        np.empty((0, 4)),
+        model,
+        INPUT,
+        sample_memories=False,
+    )
 
 plt.hist(vscore(memories[:, -DGAME:]))
 plt.show()
