@@ -83,7 +83,7 @@ else:
 
 
 # CREATE MEMORIES DB
-MEMORY_SIZE: int = 10 ** 3
+MEMORY_SIZE: int = 10 ** 4
 N_NEW_GAMES: int = 50
 N_OLD_GAMES: int = 100
 EPSILON: float = 0
@@ -128,8 +128,15 @@ random.seed(SEED)
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
-loss = train(0, memories, loss, model, INPUT, patience=50)
-loss = train(GAMMA, memories, loss, model, INPUT, patience=50)
+loss = train(0, memories, loss, model, INPUT, patience=50, name=NAME)
+
+plt.hist(model.predict(memories[:, INPUT], batch_size=500))
+plt.show()
+
+loss = train(GAMMA, memories, loss, model, INPUT, patience=50, name=NAME)
+
+plt.hist(model.predict(memories[:, INPUT], batch_size=500))
+plt.show()
 
 save(memories, points, loss, model, NAME, first=True)
 
