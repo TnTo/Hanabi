@@ -533,8 +533,7 @@ def train(
                     callbacks=[
                         keras.callbacks.EarlyStopping(
                             monitor="loss",
-                            # min_delta=0.01,
-                            baseline=1.0,
+                            min_delta=0.01,
                             patience=patience,
                             restore_best_weights=False,
                         ),

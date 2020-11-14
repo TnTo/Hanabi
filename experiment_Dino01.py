@@ -138,7 +138,7 @@ train(0, memories, loss, model, INPUT, name=NAME)
 plt.hist(model.predict(memories[:, INPUT], batch_size=512))
 plt.show()
 
-for _ in range(int(1/GAMMA/4)):
+for _ in range(int((1/(1-GAMMA)/4))):
     train(GAMMA, memories, loss, model, INPUT, name=NAME)
 
 plt.hist(model.predict(memories[:, INPUT], batch_size=512))
