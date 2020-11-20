@@ -369,7 +369,7 @@ def move(
     game: NDArray[(DGAME,), DTYPE], epsilon: float, model: keras.Model, INPUT: List[int]
 ) -> NDArray[(DGAME + DACTION + DGAME,), DTYPE]:
     actions = available_moves(game)
-    if np.random.random() < epsilon:  # exploit
+    if np.random.random() > epsilon:  # exploit
         action = np.squeeze(
             actions[np.argmax(model.predict(actions[:, INPUT]), axis=0), :]
         )
@@ -475,7 +475,7 @@ def Q(
         actions = actions.reshape((-1, DGAME + DACTION))
         pred = model.predict(actions[:, INPUT])
         pred = pred.reshape(-1, MAX_ACTION)
-        return vscore(memories[:, -DGAME:]) + gamma * np.multiply(
+        return vscore(memories[:, -DGAME:]) - vscore(memories[:, :DGAME]) + gamma * np.multiply(
             (~vis_ended(memories[:, -DGAME:])).astype(int),
             np.nanmax(pred, axis=1),
         )
@@ -516,7 +516,7 @@ def train(
     loss: NDArray[(Any, 1), float],
     model: keras.Model,
     INPUT: List[int],
-    patience: int = 100,
+    patience: int = 500,
     name: str = "hanabi",
 ) -> NDArray[(Any, 1), float]:
     np.random.shuffle(memories)
@@ -527,13 +527,14 @@ def train(
                 model.fit(
                     x=memories[:, INPUT],
                     y=Q(memories, gamma, model, INPUT),
-                    epochs=1000,
+                    epochs=5000,
                     validation_split=0.2,
-                    batch_size=512,
+                    batch_size=32,
                     callbacks=[
                         keras.callbacks.EarlyStopping(
                             monitor="loss",
-                            min_delta=0.01,
+                            # min_delta=0.01,
+                            baseline=0.1,
                             patience=patience,
                             restore_best_weights=False,
                         ),
@@ -551,6 +552,7 @@ def save(
     points: NDArray[(Any, 4), float],
     loss: NDArray[(Any, 1), float],
     model: keras.Model,
+    Qs: NDArray[(Any, 4), float],
     path: str,
     last: bool = False,
     first: bool = False,
@@ -568,14 +570,15 @@ def save(
         np.save(os.path.join(path, "memories.npy"), memories)
         np.save(os.path.join(path, "points.npy"), points)
         np.save(os.path.join(path, "loss.npy"), loss)
+        np.save(os.path.join(path, "Qs.npy"), Qs)
         keras.models.save_model(model, os.path.join(path, "nn"))
 
 
-def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], path: str):
+def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], Qs: NDArray[(Any, 4), float], path: str):
     plt.plot(loss)
     plt.title("Loss")
     plt.savefig(os.path.join(path, "loss.png"))
-    plt.close()
+    plt.show()
 
     plt.plot(points[:, 0])
     plt.plot(points[:, 1])
@@ -584,6 +587,16 @@ def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], path:
     plt.title("Points")
     plt.legend(["min", "mean", "median", "max"])
     plt.savefig(os.path.join(path, "points.png"))
+    plt.show()
+    
+    plt.plot(Qs[:, 0])
+    plt.plot(Qs[:, 1])
+    plt.plot(Qs[:, 2])
+    plt.plot(Qs[:, 3])
+    plt.title("Q")
+    plt.legend(["min", "mean", "median", "max"])
+    plt.savefig(os.path.join(path, "Qs.png"))
+    plt.show()
 
 
 def print_game(game) -> None:
