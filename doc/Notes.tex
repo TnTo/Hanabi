@@ -2,26 +2,58 @@
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{biblatex}
+\usepackage{geometry}
+
+\geometry{margin=1in}
 
 \bibliography{Hanabi.bib}
 
-\title{Resolve Hanabi with Neural Network}
+\title{Solving Hanabi with Neural Network}
 \author{Ciruzzi Michele}
 
 \begin{document}
 
 \maketitle
 
-\section{Introduction}
+% Abstract (short summary, few lines) 
+\begin{abstract}
+	Try to exploit a board game with incomplete and asymmetric information is not simple, as stated in a paper \cite{BARD2020103216} that I've read too late. Nevertheless I've tried to solve it, obviously failing. This report will show (some of) the attempts that I made and some of the lesson I've learned. 
+\end{abstract}
+
+\section{Problem}
 Hanabi is a cooperative game for 2 to 5 players with incomplete and asymmetric information.
 For this features it has been proposed by DeepMind group \parencite{BARD2020103216} as a new challenge for Reinforcement learning.
 The problem has been tackled both with deterministic (e.g \cite{Cox2015}) and ML-learning based algorithm (e.g. \cite{Lerer2019}).
-The game has been demostrated to be NP-Hard in general \parencite{Baffier2016}.
+The game has been demonstrated to be NP-Hard in general \parencite{Baffier2016}.
 As a rule of thumb a good algorithm is able to achieve a perfect score (25 points) in more than the 90\% of games.
+My aim is to train a neural network able to realize a good strategy in playing Hanabi using Deep-Q Learning algorithm: which is exactly what \textcite{BARD2020103216} have tried to do (cfr. \textit{Rainbow} policy in \cite{BARD2020103216}) with low quality results (I've noticed this only during the last reading of the paper to write this report).
+The code used for the last attempts is in the zip file attached and on colab LINK, while some of the first attempts are available int he different branches of \url{https://github.com/TnTo/Hanabi/} (particularly v0.2, v0.3 and master).
 
+% Methods
 \section{Methods}
-\subsection{General ideas}
-Even if more sofisticated algorithms are avaible, I have implemented the Deep-Q-Learning algorithm introduced by \textcite{Mnih2015}.
+Even if more sophisticated algorithms are available, I have implemented the Deep-Q-Learning algorithm introduced by \textcite{Mnih2015}.
+As far as I know, the source code used is not available and not every step of the algorithm is deeply explained, so some difference between the algorithm presented in the paper and my implementation are present (more in last section).
+I've implemented the algorithm from scratch using keras and numpy, which has critically improved the performance compared with a previous pure python implementation. 
+The algorithm can be summarized as follow:
+\begin{enumerate}
+	\item (Optional) Play some games performing random actions to populate the memory
+	\item Select a subset of the memories, calculate the target value of each action for each board state in memory (see below) and then train the network
+	\item Initialize a given number of new games and retrieve some board states from the memory, play these games with a given policy (see below) until they end appending to the memory each board state observed
+	\item repeat step 2 and 3, eventually playing some new games after the step 2 to test the ability of the network to improve the achieved score in subsequent iterations.
+\end{enumerate}
+The target value for step 2 is
+$$Q(s_t, a_t) = score(s_{t+1} | s_t, a_t) - score(s_t) + \gamma \max_{a_{t+1} \in actions} Q(s_{t+1}, a_{t+1})$$
+where $s_t$ is the board state at time $t$ and $a_t$ is the action performed. $\gamma$ is a discount factor used to account for long-term outlook. 
+The policy used in step 3 is the following: with probability $\epsilon$ the action is chosen as random, otherwise is $argmax_{a_t \in actions} Q(s_t, a_t)$.
+In fact, the goal of learning is to approximate $Q$ as well as possible with a neural network.
+For the neural network a MSE loss and a RMSProp learning has been used with different leaning rates (generally between $10^{-2}$ and $10^{-4}$), numbers of hidden layers (from 1 to 3), number of neurons (from 32 to 1024) and activations (sigmoid, tanh, ReLU and PReLU has been tried).
+
+%Results
+\section{Results}
+
+
+%Conclusion/Future Development
+\section{Conclusions}
 
 \printbibliography{}
 

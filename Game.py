@@ -1,4 +1,4 @@
-from random import shuffle
+import random
 from typing import Any, List, Tuple
 import os
 
@@ -24,6 +24,8 @@ N_COLOR = 5
 N_NUMBER = 5
 HAND_SIZE = handSize(N_PLAYER)
 
+MAX_HINTS = 8
+
 DTILE = 2
 DHANDTILE = DTILE + N_NUMBER + N_COLOR
 DPLAYER = DHANDTILE * HAND_SIZE
@@ -44,15 +46,16 @@ LAST_ROUND = [PILES[-1] + 1]
 DGAME = LAST_ROUND[-1] + 1
 
 # Action
-HINT_NUMBER = [INDEX[-1] + 1]
-HINT_COLOR = [HINT_NUMBER[-1] + 1]
-PLAYER = [HINT_COLOR[-1] + 1]
+HINT_COLOR = [INDEX[-1] + 1]
+HINT_NUMBER = [HINT_COLOR[-1] + 1]
+PLAYER = [HINT_NUMBER[-1] + 1]
 PLAY = [PLAYER[-1] + 1]
 DISCARD = [PLAY[-1] + 1]
 
 DACTION = DISCARD[-1] + 1
 
-MAX_ACTION = (N_PLAYER - 1) * (N_NUMBER + N_COLOR) + 2 * (HAND_SIZE)
+HINT_ACTION = (N_PLAYER - 1) * (N_NUMBER + N_COLOR)
+MAX_ACTION = HINT_ACTION + 2 * (HAND_SIZE)
 
 
 # Return action
@@ -90,8 +93,29 @@ def get_discard_action(tile: int) -> NDArray[(DACTION,), DTYPE]:
     return action
 
 
+ACTION_LIST = np.empty((0, DACTION), dtype=DTYPE)
+for p in range(1, N_PLAYER):
+    for n in range(N_NUMBER):
+        ACTION_LIST = np.vstack(
+            (
+                ACTION_LIST,
+                get_hint_number_action(p, n),
+            )
+        )
+    for c in range(N_COLOR):
+        ACTION_LIST = np.vstack(
+            (
+                ACTION_LIST,
+                get_hint_color_action(p, c),
+            )
+        )
+for t in range(HAND_SIZE):
+    ACTION_LIST = np.vstack((ACTION_LIST, get_discard_action(t)))
+    ACTION_LIST = np.vstack((ACTION_LIST, get_play_action(t)))
+
+
 # initialize
-def new_deck() -> NDArray[(DDECK), DTYPE]:
+def new_deck(shuffle: bool = True) -> NDArray[(DDECK), DTYPE]:
     tiles = []
     for c in range(0, N_COLOR):
         for n in range(0, 1):
@@ -103,7 +127,8 @@ def new_deck() -> NDArray[(DDECK), DTYPE]:
         for n in range(N_NUMBER - 1, N_NUMBER):
             for _ in range(1):
                 tiles.append((n, c))
-    shuffle(tiles)
+    if shuffle:
+        random.shuffle(tiles)
     if 2 * len(tiles) != DDECK:
         raise NameError("Wrong lenght before conversion to np")
     deck = np.asarray([f for tile in tiles for f in tile], dtype=DTYPE)
@@ -126,11 +151,11 @@ def draw_initial_hand(game: NDArray[(DGAME,), DTYPE]) -> NDArray[(DGAME,), DTYPE
     return game
 
 
-def new_game() -> NDArray[(DGAME,), DTYPE]:
+def new_game(shuffle: bool = True) -> NDArray[(DGAME,), DTYPE]:
     game = np.full((DGAME,), -1, dtype=DTYPE)
     game[LIFES] = 3
-    game[HINTS] = 8
-    game[DECK] = new_deck()
+    game[HINTS] = MAX_HINTS
+    game[DECK] = new_deck(shuffle=shuffle)
     game[DISCARDED] = 0
     game = draw_initial_hand(game)
     return game
@@ -189,7 +214,7 @@ def discard(game: NDArray[(DGAME,), DTYPE], tile: int) -> NDArray[(DGAME,), DTYP
     game = game.copy()
     if tile not in range(0, HAND_SIZE):
         raise ValueError
-    if game[HINTS] > 8:
+    if game[HINTS] > MAX_HINTS:
         raise NameError("Max hints avaible, discard forbidden")
     if (
         game[PLAYERS[:DPLAYER][tile * DHANDTILE : (tile + 1) * DHANDTILE][:DTILE]] == -1
@@ -293,8 +318,8 @@ def score(game: NDArray[(DGAME,), DTYPE]) -> int:
     return np.sum(game[PILES], dtype=DTYPE) + N_COLOR
 
 
-def vscore(games: NDArray[(Any, DGAME), DTYPE]) -> NDArray[(Any,), DTYPE]:
-    return np.apply_along_axis(score, 1, games)
+# def vscore(games: NDArray[(Any, DGAME), DTYPE]) -> NDArray[(Any,), DTYPE]:
+#     return np.apply_along_axis(score, 1, games)
 
 
 def is_ended(game: NDArray[(DGAME,), DTYPE]) -> bool:
@@ -307,8 +332,8 @@ def is_ended(game: NDArray[(DGAME,), DTYPE]) -> bool:
     return False
 
 
-def vis_ended(games: NDArray[(Any, DGAME), DTYPE]) -> NDArray[(Any,), bool]:
-    return np.apply_along_axis(is_ended, 1, games)
+# def vis_ended(games: NDArray[(Any, DGAME), DTYPE]) -> NDArray[(Any,), bool]:
+#     return np.apply_along_axis(is_ended, 1, games)
 
 
 def next_turn(game: NDArray[(DGAME,), DTYPE]) -> NDArray[(DGAME,), DTYPE]:
@@ -325,113 +350,96 @@ def next_turn(game: NDArray[(DGAME,), DTYPE]) -> NDArray[(DGAME,), DTYPE]:
 
 
 # move
-def available_moves(
-    game: NDArray[(DGAME,), DTYPE]
-) -> NDArray[(Any, DGAME + DACTION), DTYPE]:
-    actions = np.empty((0, DGAME + DACTION), dtype=DTYPE)
+def available_moves(game: NDArray[(DGAME,), DTYPE]) -> List[int]:
+    actions: List[int] = []
     if game[HINTS] > 0:
-        for p in range(1, N_PLAYER):
-            for n in range(N_NUMBER):
-                actions = np.vstack(
-                    (
-                        actions,
-                        np.append(game, get_hint_number_action(p, n)),
-                    )
-                )
-            for c in range(N_COLOR):
-                actions = np.vstack(
-                    (
-                        actions,
-                        np.append(game, get_hint_color_action(p, c)),
-                    )
-                )
+        actions = actions + list(range(HINT_ACTION))
     for t in range(HAND_SIZE):
-        if game[HINTS] < 8:
-            actions = np.vstack((actions, np.append(game, get_discard_action(t))))
-        actions = np.vstack((actions, np.append(game, get_play_action(t))))
+        if (
+            game[PLAYERS[:DPLAYER][t * DHANDTILE : (t + 1) * DHANDTILE][:DTILE]] != -1
+        ).all():
+            if game[HINTS] < MAX_HINTS:
+                actions = actions + [HINT_ACTION + 2 * t]
+            actions = actions + [HINT_ACTION + 2 * t + 1]
     return actions
 
 
-def pavailable_moves(
-    game: NDArray[(DGAME,), DTYPE]
-) -> NDArray[(MAX_ACTION, DGAME + DACTION), DTYPE]:
-    actions = available_moves(game)
-    return np.pad(actions, ((0, MAX_ACTION - actions.shape[0]), (0, 0)), "empty")
+# def vavailable_moves(games: NDArray[(Any, DGAME), DTYPE]) -> NDArray[(Any), object]:
+#     return np.apply_along_axis(available_moves, 1, games)
 
 
-def vavailable_moves(
-    games: NDArray[(Any, DGAME), DTYPE]
-) -> NDArray[(Any, MAX_ACTION, DGAME + DACTION), DTYPE]:
-    return np.apply_along_axis(pavailable_moves, 1, games)
-
-
-def move(
+def choose_action(
     game: NDArray[(DGAME,), DTYPE], epsilon: float, model: keras.Model, INPUT: List[int]
-) -> NDArray[(DGAME + DACTION + DGAME,), DTYPE]:
+) -> int:
     actions = available_moves(game)
     if np.random.random() > epsilon:  # exploit
-        action = np.squeeze(
-            actions[np.argmax(model.predict(actions[:, INPUT]), axis=0), :]
-        )
+        return actions[
+            np.asscalar(
+                np.argmax(
+                    model.predict(np.expand_dims(game, axis=0)[:, INPUT])[:, actions],
+                    axis=1,
+                )
+            )
+        ]
     else:  # explore
-        action = np.squeeze(actions[np.random.choice(actions.shape[0], size=1), :])
-    if action[DGAME:][HINT_NUMBER] != -1:
-        return np.append(
-            action,
-            next_turn(
-                hint_number(
-                    action[:DGAME],
-                    np.asscalar(action[DGAME:][PLAYER]),
-                    np.asscalar(action[DGAME:][HINT_NUMBER]),
-                )
-            ),
-        )
-    if action[DGAME:][HINT_COLOR] != -1:
-        return np.append(
-            action,
-            next_turn(
-                hint_color(
-                    action[:DGAME],
-                    np.asscalar(action[DGAME:][PLAYER]),
-                    np.asscalar(action[DGAME:][HINT_COLOR]),
-                )
-            ),
-        )
-    if action[DGAME:][PLAY] != -1:
-        return np.append(
-            action, next_turn(play(action[:DGAME], np.asscalar(action[DGAME:][PLAY])))
-        )
-    if action[DGAME:][DISCARD] != -1:
-        return np.append(
-            action,
-            next_turn(discard(action[:DGAME], np.asscalar(action[DGAME:][DISCARD]))),
-        )
+        return random.choice(actions)
 
 
-def vmove(
-    games: NDArray[(Any, DGAME), DTYPE],
-    epsilon: float,
-    model: keras.Model,
-    INPUT: List[int],
-) -> NDArray[(Any, DGAME + DACTION + DGAME), DTYPE]:
-    return np.apply_along_axis(move, 1, games, epsilon, model, INPUT)
+# def vchoose_action(
+#     games: NDArray[(Any, DGAME), DTYPE],
+#     epsilon: float,
+#     model: keras.Model,
+#     INPUT: List[int],
+# ) -> NDArray[(Any, 1), int]:
+#     return np.apply_along_axis(choose_action, 1, games, epsilon, model, INPUT)
+
+
+def move(game: NDArray[(DGAME,), DTYPE], action: int) -> NDArray[(DGAME,), DTYPE]:
+    if ACTION_LIST[action][HINT_NUMBER] != -1:
+        return next_turn(
+            hint_number(
+                game,
+                np.asscalar(ACTION_LIST[action][PLAYER]),
+                np.asscalar(ACTION_LIST[action][HINT_NUMBER]),
+            )
+        )
+    if ACTION_LIST[action][HINT_COLOR] != -1:
+        return next_turn(
+            hint_color(
+                game,
+                np.asscalar(ACTION_LIST[action][PLAYER]),
+                np.asscalar(ACTION_LIST[action][HINT_COLOR]),
+            )
+        )
+    if ACTION_LIST[action][PLAY] != -1:
+        return next_turn(play(game, np.asscalar(ACTION_LIST[action][PLAY])))
+    if ACTION_LIST[action][DISCARD] != -1:
+        return discard(game, np.asscalar(ACTION_LIST[action][DISCARD]))
+
+
+# def vmove(
+#     games: NDArray[(Any, DGAME), DTYPE], actions: NDArray[(Any, 1), int]
+# ) -> NDArray[(Any, DGAME), DTYPE]:
+#     return np.apply_along_axis(move, 1, games, actions)
 
 
 # for learning
 def get_memories(
     memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE],
     n: int,
-) -> NDArray[(Any, DGAME + DACTION + DGAME), DTYPE]:
+) -> NDArray[(Any, DGAME), DTYPE]:
     if n == 0:
-        return np.empty((0, DGAME + DACTION + DGAME), dtype=DTYPE)
+        return np.empty((0, DGAME), dtype=DTYPE)
+    if memories.shape[0] > 0:
+        memories = memories[np.argsort(np.apply_along_axis(score, 1, memories), axis=0)]
     if memories.shape[0] < n:
         return memories
     else:
-        return memories[np.argsort(vscore(memories[:, -DGAME:]), axis=0)][-n:, :]
+        return memories[-n:, :]
 
 
 def get_games(
-    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE],
+    memories: NDArray[(Any, DGAME), DTYPE],
     new: int,
     old: int,
     sample_memories: bool = True,
@@ -440,15 +448,14 @@ def get_games(
     for _ in range(new):
         games = np.vstack((games, new_game()))
     if memories.shape[0] < old:
-        games = np.vstack((games, memories[:, :DGAME]))
+        games = np.vstack((games, memories))
     else:
         if sample_memories:
             games = np.vstack(
                 (
                     games,
                     memories[
-                        np.random.choice(memories.shape[0], size=old, replace=False),
-                        :DGAME,
+                        np.random.choice(memories.shape[0], size=old, replace=False), :
                     ],
                 )
             )
@@ -456,29 +463,71 @@ def get_games(
             games = np.vstack(
                 (
                     games,
-                    memories[-old:, :DGAME],
+                    memories[-old:, :],
                 )
             )
     return games
 
 
+def try_all_moves(
+    game: NDArray[(DGAME,), DTYPE]
+) -> NDArray[(MAX_ACTION, DGAME), DTYPE]:
+    post = np.full((MAX_ACTION, DGAME), -1, dtype=DTYPE)
+    if is_ended(game):
+        post[:, 0] = 0
+        return post
+    else:
+        actions = available_moves(game)
+        forbidden = np.ones(MAX_ACTION, dtype=bool)
+        forbidden[actions] = False
+        post[forbidden, 0] = 0
+        post[actions, :] = np.apply_along_axis(
+            lambda a: move(game, np.asscalar(a)), 1, np.array(actions).reshape(-1, 1)
+        )
+        return post
+
+
+# def vtry_all_moves(games: NDArray[(Any, DGAME), DTYPE]) -> NDArray[(Any, MAX_ACTION, DGAME), DTYPE]:
+#     return np.apply_along_axis(try_all_moves, 1, games)
+
+
 def Q(
-    memories: NDArray[(Any, DGAME + DACTION + DGAME), DTYPE],
+    memories: NDArray[(Any, DGAME), DTYPE],
     gamma: float,
     model: keras.Model,
     INPUT: List[int],
 ) -> NDArray[(Any, 1), float]:
-    if gamma == 0:
-        return vscore(memories[:, -DGAME:])
-    else:
-        actions = vavailable_moves(memories[:, -DGAME:])
-        actions = actions.reshape((-1, DGAME + DACTION))
-        pred = model.predict(actions[:, INPUT])
-        pred = pred.reshape(-1, MAX_ACTION)
-        return vscore(memories[:, -DGAME:]) - vscore(memories[:, :DGAME]) + gamma * np.multiply(
-            (~vis_ended(memories[:, -DGAME:])).astype(int),
-            np.nanmax(pred, axis=1),
+    post = np.apply_along_axis(try_all_moves, 1, memories)
+    if gamma < 1e-6:
+        maxQ = 1
+        Qs = np.multiply(
+            (~np.apply_along_axis(is_ended, 1, memories)).astype(int).reshape(-1, 1),
+            np.apply_along_axis(score, 2, post)
+            - np.apply_along_axis(score, 1, memories).reshape(-1, 1),
         )
+    else:
+        maxQ = (1 - gamma ** (N_NUMBER * N_COLOR)) / (1 - gamma)
+        Qs = np.multiply(
+            (~np.apply_along_axis(is_ended, 1, memories)).astype(int).reshape(-1, 1),
+            np.apply_along_axis(score, 2, post)
+            - np.apply_along_axis(score, 1, memories).reshape(-1, 1)
+            + gamma
+            * np.reshape(
+                np.multiply(
+                    np.amax(
+                        model.predict(
+                            np.reshape(post, (-1, DGAME))[:, INPUT], batch_size=512
+                        ),
+                        axis=1,
+                    ).reshape(-1, 1),
+                    -post[:, :, 0].reshape(-1, 1),
+                ),
+                (memories.shape[0], MAX_ACTION),
+            ),
+        )
+    Qs[Qs < 0] = 0
+    Qs[Qs > maxQ] = maxQ
+    return Qs
 
 
 # for workflow
@@ -495,18 +544,33 @@ def play_game(
 ) -> Tuple[NDArray[(Any, DGAME + DACTION + DGAME), DTYPE], NDArray[(Any, 4), float]]:
     memories = get_memories(memories, memory_size)
     games = get_games(memories, new, old, sample_memories=sample_memories)
-    while (~vis_ended(games)).all():
-        actions = vmove(games[~vis_ended(games)], epsilon, model, INPUT)
-        memories = np.vstack((memories, actions))
-        games[~vis_ended(games)] = actions[:, DGAME + DACTION : DGAME + DACTION + DGAME]
-    score = vscore(games)
+    while (~(np.apply_along_axis(is_ended, 1, games))).all():
+        memories = np.vstack(
+            (memories, games[~(np.apply_along_axis(is_ended, 1, games))])
+        )
+        games[~(np.apply_along_axis(is_ended, 1, games))] = np.apply_along_axis(
+            lambda x: move(x[1:], x[0]),
+            1,
+            np.insert(
+                games,
+                0,
+                np.apply_along_axis(
+                    choose_action, 1, games, epsilon, model, INPUT
+                ).transpose(),
+                axis=1,
+            ),
+        )
+    memories = np.vstack((memories, games))
+    scores = np.apply_along_axis(score, 1, games)
     points = np.vstack(
         (
             points,
-            np.array([np.amin(score), np.mean(score), np.median(score), np.max(score)]),
+            np.array(
+                [np.amin(scores), np.mean(scores), np.median(scores), np.max(scores)]
+            ),
         ),
     )
-    print(score)
+    print(scores)
     return memories, points
 
 
@@ -519,7 +583,7 @@ def train(
     patience: int = 500,
     name: str = "hanabi",
 ) -> NDArray[(Any, 1), float]:
-    np.random.shuffle(memories)
+    # np.random.shuffle(memories)
     loss = np.vstack(
         (
             loss,
@@ -528,13 +592,12 @@ def train(
                     x=memories[:, INPUT],
                     y=Q(memories, gamma, model, INPUT),
                     epochs=5000,
-                    validation_split=0.2,
+                    # validation_split=0.2,
                     batch_size=32,
                     callbacks=[
                         keras.callbacks.EarlyStopping(
                             monitor="loss",
-                            # min_delta=0.01,
-                            baseline=0.1,
+                            min_delta=0.01,
                             patience=patience,
                             restore_best_weights=False,
                         ),
@@ -560,11 +623,11 @@ def save(
     if not os.path.exists(path):
         os.mkdir(path)
     if last:
-        np.savetxt(os.path.join(path, "last_memories.csv"), memories)
-        np.savetxt(os.path.join(path, "last_points.csv"), points)
+        np.save(os.path.join(path, "last_memories.npy"), memories)
+        np.save(os.path.join(path, "last_points.npy"), points)
     elif first:
-        np.savetxt(os.path.join(path, "memories_t0.csv"), memories)
-        np.savetxt(os.path.join(path, "loss_t0.csv"), loss)
+        np.save(os.path.join(path, "memories_t0.npy"), memories)
+        np.save(os.path.join(path, "loss_t0.npy"), loss)
         keras.models.save_model(model, os.path.join(path, "nn_t0"))
     else:
         np.save(os.path.join(path, "memories.npy"), memories)
@@ -574,7 +637,12 @@ def save(
         keras.models.save_model(model, os.path.join(path, "nn"))
 
 
-def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], Qs: NDArray[(Any, 4), float], path: str):
+def plot(
+    loss: NDArray[(Any, 1), float],
+    points: NDArray[(Any, 4), float],
+    Qs: NDArray[(Any, 4), float],
+    path: str,
+):
     plt.plot(loss)
     plt.title("Loss")
     plt.savefig(os.path.join(path, "loss.png"))
@@ -588,7 +656,7 @@ def plot(loss: NDArray[(Any, 1), float], points: NDArray[(Any, 4), float], Qs: N
     plt.legend(["min", "mean", "median", "max"])
     plt.savefig(os.path.join(path, "points.png"))
     plt.show()
-    
+
     plt.plot(Qs[:, 0])
     plt.plot(Qs[:, 1])
     plt.plot(Qs[:, 2])
