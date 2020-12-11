@@ -340,11 +340,11 @@ def next_turn(game: NDArray[(DGAME,), DTYPE]) -> NDArray[(DGAME,), DTYPE]:
     game = game.copy()
     game[PLAYERS] = np.roll(game[PLAYERS], DPLAYER)
     if (game[DECK] == -1).all():
-        if game[LAST_ROUND] == -1:
+        if np.asscalar(game[LAST_ROUND]) == -1:
             game[LAST_ROUND] = N_PLAYER
-        elif game[LAST_ROUND] > 0:
+        elif np.asscalar(game[LAST_ROUND]) > 0:
             game[LAST_ROUND] -= 1
-        elif game[LAST_ROUND] == 0:
+        elif np.asscalar(game[LAST_ROUND]) == 0:
             raise NameError("Last round already completed, game should be alredy ended")
     return game
 
@@ -414,7 +414,7 @@ def move(game: NDArray[(DGAME,), DTYPE], action: int) -> NDArray[(DGAME,), DTYPE
     if ACTION_LIST[action][PLAY] != -1:
         return next_turn(play(game, np.asscalar(ACTION_LIST[action][PLAY])))
     if ACTION_LIST[action][DISCARD] != -1:
-        return discard(game, np.asscalar(ACTION_LIST[action][DISCARD]))
+        return next_turn(discard(game, np.asscalar(ACTION_LIST[action][DISCARD])))
 
 
 # def vmove(
@@ -683,6 +683,7 @@ def print_game(game) -> None:
                 ]
             )
     print("PILES ", game[PILES])
+    print("LAST ROUND ", game[LAST_ROUND])
 
 
 def print_action(action) -> None:
