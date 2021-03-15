@@ -13,3 +13,9 @@ The notebooks in this repo highlight some problems in this implementation.
 * despite the name GradientDeath shows how this algorithm is unable to learn. In a previous version the output layer had dimension 1 and, if the last hidden layer was small and with relu activation, gradient saturated very fast
 
 
+## Logic
+The logic of the implementation is in the Game*.py files.
+
+* Game.py is the last version, used in all the notebooks except QUnlimited
+* GameUnlimited.py doesn't cut the returned values of Q function and is used for QUnlimited
+* GameDummy.py has lower dimensionality
